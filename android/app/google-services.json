@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "213096771449",
+    "project_id": "homefitai-c87b6",
+    "storage_bucket": "homefitai-c87b6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213096771449:android:fe7793e49d46a78523c9a8",
+        "android_client_info": {
+          "package_name": "com.tkturners.homefitai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_vuHR0lcNgD2iNm8WrLdyHFVkHM7V0gY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
