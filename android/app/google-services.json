@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "213096771449",
-    "project_id": "homefitai-c87b6",
-    "storage_bucket": "homefitai-c87b6.firebasestorage.app"
+    "project_number": "558357878887",
+    "project_id": "homefit-ai",
+    "storage_bucket": "homefit-ai.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:213096771449:android:fe7793e49d46a78523c9a8",
+        "mobilesdk_app_id": "1:558357878887:android:98ecd105ef33dd55981cc2",
         "android_client_info": {
           "package_name": "com.tkturners.homefitai"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB_vuHR0lcNgD2iNm8WrLdyHFVkHM7V0gY"
+          "current_key": "AIzaSyBKDKenL1jl1N6L04bo_BNrf2IuqyD07_c"
         }
       ],
       "services": {
