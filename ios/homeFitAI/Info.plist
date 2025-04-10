@@ -28,7 +28,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>myapp</string>
-				<string>com.anonymous.elevenlab-ai</string>
+				<string>com.tkturners.homefitai</string>
 			</array>
 		</dict>
 		<dict>

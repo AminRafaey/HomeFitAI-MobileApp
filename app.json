@@ -13,7 +13,7 @@
         "NSMicrophoneUsageDescription": "This app uses the microphone to record audio."
       },
       "supportsTablet": false,
-      "bundleIdentifier": "com.anonymous.elevenlab-ai"
+      "bundleIdentifier": "com.tkturners.homefitai"
     },
     "android": {
       "adaptiveIcon": {
