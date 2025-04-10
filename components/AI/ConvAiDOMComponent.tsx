@@ -85,6 +85,7 @@ export default function ConvAiDOMComponent({
         style={[
           styles.buttonInner,
           conversation.status === "connected" && styles.buttonInnerActive,
+          conversation.status === "connected" && styles.buttonInnerEnd,
           loading && styles.buttonInnerLoading,
         ]}
         colors={
@@ -155,6 +156,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     boxShadow: "0px 2.78px 0px 0px rgba(160, 69, 21, 1)",
   },
+  buttonInnerEnd: {
+    flexDirection: "row",
+    width: "100%",
+    height: 60,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0px 2.78px 0px 0px rgba(160, 69, 21, 1)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 141, 81, 1)",
+  },
+
   buttonInnerActive: {
     backgroundColor: "#EF4444",
     shadowColor: "#EF4444",

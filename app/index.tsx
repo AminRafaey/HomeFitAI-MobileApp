@@ -13,6 +13,7 @@ import {
 import { Platform } from "react-native";
 import { getCurrentDate } from "@/components/commonFunctions/reuseableFunctions";
 import ConvAiDOMComponent from "@/components/AI/ConvAiDOMComponent";
+import { BlurView } from "expo-blur";
 
 // ==========================================
 
@@ -21,21 +22,18 @@ export default function AICoachingScreen() {
     { message: string; source: string }[]
   >([]);
   const ref = useRef(null);
-  const flatListRef = useRef(null);
-
-  useEffect(() => {
-    if (messages.length > 0 && flatListRef.current) {
-      flatListRef.current.scrollToIndex({
-        index: messages.length - 1,
-        animated: true,
-      });
-    }
-  }, [messages]);
 
   useEffect(() => {
     ref.current = messages;
+    console.log("hello this is a testing console");
   }, [messages]);
-
+  const getCurrentDate = () => {
+    const date = new Date();
+    const weekday = date.toLocaleString("default", { weekday: "long" });
+    const month = date.toLocaleString("default", { month: "long" });
+    const day = date.getDate();
+    return `${month} ${day}, ${weekday}`;
+  };
   const handleSetMessages = (newMessages: {
     message: string;
     source: string;
@@ -49,51 +47,53 @@ export default function AICoachingScreen() {
   };
   return (
     <ImageBackground
-      source={require("../../assets/images/back.gif")}
+      source={require("./../assets/images/image.png")}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.topContent}>
           <Text style={styles.dateText}>{getCurrentDate()}</Text>
-          <Image source={require("../../assets/images/notepad.png")} />
+          <View
+            style={{
+              backgroundColor: "white",
+              width: 42,
+              height: 42,
+              borderRadius: 87.5,
+              borderWidth: 4,
+              borderColor: "rgba(9, 229, 56, 1)",
+              boxShadow: "0px 2.43px 0px 0px rgba(44, 122, 8, 1)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Image
+              style={{ width: 22, height: 19, resizeMode: "contain" }}
+              source={require("./../assets/images/notepad.png")}
+            />
+          </View>
         </View>
         <View style={styles.topContentmid}></View>
         <View style={styles.topContentLower}>
-          <View style={styles.additionalBox}>
-            <FlatList
-              data={messages}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <View
-                  style={[
-                    styles.messageBubble,
-                    item.source === "ai"
-                      ? styles.aiMessage
-                      : styles.userMessage,
-                  ]}
-                >
-                  <Text style={styles.messageText}>{item.message}</Text>
-                </View>
-              )}
-              contentContainerStyle={{ paddingBottom: 20 }}
-              onContentSizeChange={() =>
-                flatListRef.current?.scrollToIndex({
-                  index: messages.length - 1,
-                  animated: true,
-                })
-              }
-              onLayout={() =>
-                flatListRef.current?.scrollToIndex({
-                  index: messages.length - 1,
-                  animated: true,
-                })
-              }
-              getItemLayout={(data, index) => ({
-                length: 50, // Approximate height of each message
-                offset: 50 * index,
-                index,
-              })}
-            />
+          <View style={styles.additionalBoxContainer}>
+            <BlurView intensity={100} tint="dark" style={styles.additionalBox}>
+              <FlatList
+                data={messages}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                  <View
+                    style={[
+                      styles.messageBubble,
+                      item.source === "ai"
+                        ? styles.aiMessage
+                        : styles.userMessage,
+                    ]}
+                  >
+                    <Text style={styles.messageText}>{item.message}</Text>
+                  </View>
+                )}
+                contentContainerStyle={{ paddingBottom: 20 }}
+              />
+            </BlurView>
           </View>
           <View style={styles.domComponentContainer}>
             <ConvAiDOMComponent
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   topContent: {
-    paddingTop: 40,
+    marginTop: 70,
     paddingHorizontal: 24,
     alignItems: "flex-start",
     flex: 0.2,
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 24,
     color: "white",
-    marginBottom: 8,
+    marginBottom: 40,
   },
   topContentmid: {
     paddingTop: 40,
@@ -142,26 +142,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 0.5,
   },
-  additionalBox: {
+  additionalBoxContainer: {
     width: "90%",
     height: "60%",
-    backgroundColor: "rgba(0, 0, 0, 0.66)",
+    marginBottom: 20,
     borderRadius: 20,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255, 55, 127, 1)",
-    overflow: "hidden",
-    marginBottom: 20,
-    padding: 12,
   },
-  glassContainer: {
-    width: "90%",
-    height: "60%",
+
+  additionalBox: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
     borderRadius: 20,
     overflow: "hidden",
-  },
-  boxText: {
-    fontSize: 18,
-    color: "white",
   },
 
   domComponentContainer: {
@@ -179,6 +175,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     borderRadius: 12,
     maxWidth: "80%",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   aiMessage: {
     backgroundColor: "rgba(255, 55, 127, 0.5)",
