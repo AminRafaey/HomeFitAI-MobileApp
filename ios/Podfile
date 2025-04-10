@@ -16,6 +16,10 @@ prepare_react_native_project!
 target 'homeFitAI' do
   use_expo_modules!
 
+  # Use static frameworks to avoid conflicts with Firebase libraries
+  use_frameworks! :linkage => :static
+  $RNFirebaseAsStaticFramework = true
+
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
   else
