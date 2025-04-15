@@ -2,24 +2,30 @@
 
 import React from "react";
 import { useConversation } from "@11labs/react";
-import { AudioLines, Loader, LoaderCircle, Mic, X } from "lucide-react-native";
+import { AudioLines, Loader, X } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { requestMicrophonePermission } from "../permissions/askPermission";
 import Config from "../config";
+import { auth, cloudFunctions } from "@/firebaseConfig";
+import { httpsCallable } from "@firebase/functions";
 
 // =========================================================
 
 export default function ConvAiDOMComponent({
   platform,
   setMessages,
+  userId,
 }: {
   dom?: import("expo/dom").DOMProps;
   platform: string;
+  userId: any;
   setMessages: (newMessages: { message: string; source: string }) => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const [conversationId, setConversationId] = useState("");
+  const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
   const conversation = useConversation({
     onConnect: () => {
       setLoading(false);
@@ -27,6 +33,7 @@ export default function ConvAiDOMComponent({
     },
     onDisconnect: () => {
       console.log("Disconnected");
+
       setMessages({ message: "Disconnected", source: "ai" });
     },
     onMessage: (message) => {
@@ -53,6 +60,12 @@ export default function ConvAiDOMComponent({
         },
         clientTools: {},
       });
+      const sessionID = conversation.getId();
+      if (sessionID) {
+        setConversationId(sessionID);
+      } else {
+        console.error("Failed to retrieve session ID");
+      }
     } catch (error) {
       console.error("Failed to start conversation:", error);
     }
@@ -61,6 +74,13 @@ export default function ConvAiDOMComponent({
   const stopConversation = useCallback(async () => {
     await conversation.endSession();
     setMessages({ message: "Disconnected", source: "ai" });
+
+    const response = await getWorkoutPlan({
+      conversationId: conversationId,
+      userId: userId,
+    });
+
+    const data = response.data;
   }, [conversation]);
 
   const buttonText = loading

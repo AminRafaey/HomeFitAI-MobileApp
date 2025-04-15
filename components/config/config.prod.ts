@@ -1,4 +1,4 @@
-import { AGENT_ID } from "@/utils/static/keys";
+import { AGENT_ID, OPENAI_KEY } from "@/utils/static/keys";
 
 /**
  * These are configuration settings for the production environment.
@@ -10,4 +10,5 @@ import { AGENT_ID } from "@/utils/static/keys";
 export default {
   API_URL: "CHANGEME",
   AI_AGENT_ID: AGENT_ID,
+  OPENAI_AUTH_KEY: OPENAI_KEY,
 };
