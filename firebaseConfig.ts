@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
+import { getAuth } from "firebase/auth";
 import firebase from "@react-native-firebase/app";
 
 export const firebaseConfig = {
@@ -20,5 +21,6 @@ if (!firebase.apps.length) {
 const firebaseApp = initializeApp(firebaseConfig);
 const DB = getFirestore(firebaseApp);
 const cloudFunctions = getFunctions(firebaseApp);
+const auth = getAuth(firebaseApp);
 
-export { DB, cloudFunctions };
+export { DB, cloudFunctions, auth };

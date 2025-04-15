@@ -9,23 +9,26 @@ import {
   ImageBackground,
   Image,
   FlatList,
+  Button,
+  TouchableOpacity,
 } from "react-native";
 import { Platform } from "react-native";
 import { getCurrentDate } from "@/components/commonFunctions/reuseableFunctions";
 import ConvAiDOMComponent from "@/components/AI/ConvAiDOMComponent";
 import { BlurView } from "expo-blur";
+import { router } from "expo-router";
+import { auth } from "@/firebaseConfig";
 
 // ==========================================
 
 export default function AICoachingScreen() {
+  const user = auth.currentUser;
   const [messages, setMessages] = useState<
     { message: string; source: string }[]
   >([]);
   const ref = useRef(null);
-
   useEffect(() => {
     ref.current = messages;
-    console.log("hello this is a testing console");
   }, [messages]);
   const getCurrentDate = () => {
     const date = new Date();
@@ -66,10 +69,12 @@ export default function AICoachingScreen() {
               alignItems: "center",
             }}
           >
-            <Image
-              style={{ width: 22, height: 19, resizeMode: "contain" }}
-              source={require("./../assets/images/notepad.png")}
-            />
+            <TouchableOpacity onPress={() => router.push("/login")}>
+              <Image
+                style={{ width: 22, height: 19, resizeMode: "contain" }}
+                source={require("./../assets/images/notepad.png")}
+              />
+            </TouchableOpacity>
           </View>
         </View>
         <View style={styles.topContentmid}></View>
@@ -100,6 +105,7 @@ export default function AICoachingScreen() {
               setMessages={handleSetMessages}
               dom={{ style: styles.domComponent }}
               platform={Platform.OS}
+              userId={user}
             />
           </View>
         </View>
