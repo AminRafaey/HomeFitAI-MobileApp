@@ -1,64 +1,108 @@
 "use dom";
 
-import React from "react";
+import React, { useRef } from "react";
 import { useConversation } from "@11labs/react";
-import { AudioLines, Loader, LoaderCircle, Mic, X } from "lucide-react-native";
+import { AudioLines, Loader, X } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { requestMicrophonePermission } from "../permissions/askPermission";
-import Config from "../config";
+import { cloudFunctions } from "@/firebaseConfig";
+import { httpsCallable } from "@firebase/functions";
+import { router } from "expo-router";
+import { changeWorkoutPlan } from "@/utils/static/tools";
 
 // =========================================================
 
 export default function ConvAiDOMComponent({
-  platform,
+  username,
   setMessages,
+  userId,
+  text,
+  agentId,
+  userData,
 }: {
   dom?: import("expo/dom").DOMProps;
-  platform: string;
+  username: string;
+  userId: any;
+  text: string;
+  agentId: string;
+  userData?: any;
   setMessages: (newMessages: { message: string; source: string }) => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const userStoppedRef = useRef(false);
+  const conversationIdRef = useRef<string>("");
+  const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
+
   const conversation = useConversation({
     onConnect: () => {
       setLoading(false);
-      console.log("Connected");
     },
     onDisconnect: () => {
-      console.log("Disconnected");
-      setMessages({ message: "Disconnected", source: "ai" });
+      const wasUser = userStoppedRef.current;
+      setMessages({ message: `Disconnected`, source: "ai" });
+      if (!wasUser && text === "orientation") {
+        router.push("/loading");
+
+        getWorkoutPlan({
+          conversationId: conversationIdRef.current,
+          userId: userId.uid,
+        })
+          .then((response) => {
+            const data = response.data;
+          })
+          .catch((error) => {
+            console.error("Error fetching workout plan:", error);
+          });
+      }
+
+      if (!wasUser && text === "coaching") {
+      } else if (wasUser) {
+        alert("Try again");
+      }
+
+      userStoppedRef.current = false;
+      conversationIdRef.current = "";
     },
     onMessage: (message) => {
-      console.log(message);
       setMessages({ message: message.message, source: message.source });
+    },
+    clientTools: {
+      changeWorkoutPlan,
     },
     onError: (error) => console.error("Error:", error),
   });
   const startConversation = useCallback(async () => {
     setLoading(true);
     try {
-      // Request microphone permission
       const hasPermission = await requestMicrophonePermission();
       if (!hasPermission) {
         alert("No permission");
         return;
       }
-
-      // Start the conversation with your agent
-      await conversation.startSession({
-        agentId: Config.AI_AGENT_ID,
+      const con = await conversation.startSession({
+        agentId: agentId,
         dynamicVariables: {
-          platform,
+          username: username ? username : "",
+          conversation: userData ? userData.conversation : "",
+          workoutplan: userData ? userData.plan : "",
+          history: userData ? userData.history : "",
         },
-        clientTools: {},
       });
+      const sessionID = conversation.getId();
+      if (sessionID) {
+        conversationIdRef.current = sessionID;
+      } else {
+        console.error("Failed to retrieve session ID");
+      }
     } catch (error) {
       console.error("Failed to start conversation:", error);
     }
   }, [conversation]);
 
   const stopConversation = useCallback(async () => {
+    userStoppedRef.current = true;
     await conversation.endSession();
     setMessages({ message: "Disconnected", source: "ai" });
   }, [conversation]);
@@ -66,8 +110,8 @@ export default function ConvAiDOMComponent({
   const buttonText = loading
     ? "Please wait..."
     : conversation.status === "disconnected"
-    ? "Start orientation"
-    : "End orientation";
+    ? `Start ${text}`
+    : `End ${text}`;
   return (
     <Pressable
       style={[

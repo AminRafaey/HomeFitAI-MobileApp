@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, serverTimestamp } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
-import firebase from "@react-native-firebase/app";
+import { getAuth } from "firebase/auth";
 
 export const firebaseConfig = {
   apiKey: "AIzaSyBKub3LGRYpnw1t6JIyt0pJ4cffPFYi_x0",
@@ -13,12 +13,12 @@ export const firebaseConfig = {
   measurementId: "G-R7FSNR4610",
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+
 
 const firebaseApp = initializeApp(firebaseConfig);
 const DB = getFirestore(firebaseApp);
 const cloudFunctions = getFunctions(firebaseApp);
+const auth = getAuth(firebaseApp);
+const timestamp = serverTimestamp;
 
-export { DB, cloudFunctions };
+export { DB, cloudFunctions, auth, timestamp };
