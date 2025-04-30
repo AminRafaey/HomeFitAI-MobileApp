@@ -10,7 +10,6 @@ import { requestMicrophonePermission } from "../permissions/askPermission";
 import { cloudFunctions } from "@/firebaseConfig";
 import { httpsCallable } from "@firebase/functions";
 import { router } from "expo-router";
-import { changeWorkoutPlan } from "@/utils/static/tools";
 
 // =========================================================
 
@@ -34,6 +33,10 @@ export default function ConvAiDOMComponent({
   const userStoppedRef = useRef(false);
   const conversationIdRef = useRef<string>("");
   const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
+  const geUpdatedWorkoutPlan = httpsCallable(
+    cloudFunctions,
+    "geUpdatedWorkoutPlan"
+  );
 
   const conversation = useConversation({
     onConnect: () => {
@@ -43,7 +46,15 @@ export default function ConvAiDOMComponent({
       const wasUser = userStoppedRef.current;
       setMessages({ message: `Disconnected`, source: "ai" });
       if (!wasUser && text === "orientation") {
-        router.push("/loading");
+        router.push({
+          pathname: "/loading",
+          params: {
+            text: "Creating your\nPersonal Plan\nPlease wait...",
+            time: "30000",
+            nextRoute:
+              "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
+          },
+        });
 
         getWorkoutPlan({
           conversationId: conversationIdRef.current,
@@ -68,11 +79,39 @@ export default function ConvAiDOMComponent({
     onMessage: (message) => {
       setMessages({ message: message.message, source: message.source });
     },
-    clientTools: {
-      changeWorkoutPlan,
-    },
+
     onError: (error) => console.error("Error:", error),
   });
+  const changeWorkoutPlan = async ({ goal, days, intensity }) => {
+    console.log("changeWorkoutPlan called with:", { goal, days, intensity });
+    console.log(conversationIdRef.current, userId.uid);
+    geUpdatedWorkoutPlan({
+      conversationId: conversationIdRef.current,
+      userId: userId.uid,
+      userData: { goal, days, intensity },
+    })
+      .then((response) => {
+        const data = response.data;
+        console.log(data, "Workout plan updated successfully:");
+      })
+      .catch((error) => {
+        console.error("Error fetching workout plan:", error);
+      });
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await conversation.endSession();
+    router.push({
+      pathname: "/loading",
+      params: {
+        text: "Updating your\nPersonal Plan\nPlease wait...",
+        time: "30000",
+        nextRoute:
+          "/success?title=Your%20Plan%20Has%20Been%20Updated&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
+      },
+    });
+
+    return "Workout updated and session ended.";
+  };
   const startConversation = useCallback(async () => {
     setLoading(true);
     try {
@@ -89,7 +128,9 @@ export default function ConvAiDOMComponent({
           workoutplan: userData ? userData.plan : "",
           history: userData ? userData.history : "",
         },
+        clientTools: { changeWorkoutPlan },
       });
+
       const sessionID = conversation.getId();
       if (sessionID) {
         conversationIdRef.current = sessionID;

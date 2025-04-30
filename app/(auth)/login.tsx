@@ -20,19 +20,17 @@ import { Feather } from "@expo/vector-icons";
 import useAuth from "@/context/useAuth";
 
 export default function LoginScreen() {
-  const { login, signup } = useAuth();
+  const { login, register } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  console.log("hellow ");
 
   const handleLogin = () => {
     login(email, password);
   };
 
   const handleSignUp = async () => {
-    signup(email, password);
+    register(email, password);
   };
 
   return (

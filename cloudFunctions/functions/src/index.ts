@@ -133,6 +133,142 @@ Today is ${todayName}, and it is week ${currentWeek} of the plan.`;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+
+export const geUpdatedWorkoutPlan = onCall(async (request) => {
+  try {
+    const userData = request.data.userData;
+    const userId = request.data.userId;
+    const conversationId = request.data.conversationId;
+
+    const simplifiedExercises = await fetchSimplifiedExercises();
+    if (!simplifiedExercises || simplifiedExercises.length === 0) {
+      throw new Error("Failed to fetch exercise list");
+    }
+
+    const firestore = getFirestore();
+    const userRef = firestore.collection("users").doc(userId);
+    const prevPlanSnap = await userRef
+      .collection("OpenAIPlan")
+      .orderBy("createdAt", "desc")
+      .limit(1)
+      .get();
+
+    if (prevPlanSnap.empty) throw new Error("No previous workout plan found");
+
+    const prevPlan = prevPlanSnap.docs[0].data()?.cleanedWorkoutPlan;
+
+    const workoutPlan = await generateModifiedWorkoutPlan(
+      userData,
+      simplifiedExercises,
+      prevPlan
+    );
+    if (!workoutPlan) throw new Error("Failed to generate workout plan");
+    const data = {
+      userId: userId,
+      workoutPlan,
+      conversationId: conversationId,
+    };
+    await saveToFirestore(data);
+    return {
+      success: true,
+      data: data,
+    };
+  } catch (error) {
+    console.error("Error in getConversationHistory:", (error as Error).message);
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+const generateModifiedWorkoutPlan = async (
+  newUserData: UserData,
+  exercises: Exercise[],
+  prevPlan: string
+) => {
+  const response = await axios.post(
+    "https://api.openai.com/v1/chat/completions",
+    {
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a professional fitness coach assistant.
+You are given new user data and their previous workout plan.
+Update the plan based on any changes in preferences, injuries, goals, or schedule.
+         Your workout plan should:
+          - Match the user's goals and fitness level
+          - Respect their injuries and avoid exercises that may aggravate them
+          - Fit within their schedule (days and times available)
+          - Include warm-up and cool-down suggestions
+          - Balance muscle groups and allow for rest days
+          
+          You MUST return the response as a valid JSON object with the following format:
+          
+          {
+            "name": "John",
+            "goal": "Build muscle and lose fat",
+            "schedule": ["Monday", "Wednesday", "Friday"],
+            "equipment": ["Dumbbells", "Resistance bands"],
+            "note": "Avoid exercises that may strain the lower back",
+            "weekly_plan": {
+              "Monday": {
+                "warmup": [{ "name": "Arm circles" }, { "name": "Marching in place" }],
+                "workout": [
+                  { 
+                    "name": "Bodyweight squatting row", 
+                    "id": "3xK09Sk", 
+                    "sets": 3, 
+                    "reps": "8-10", 
+                    "note": "Focus on maintaining proper form", 
+                    "image": "https://example.com/images/squatting_row.jpg" 
+                  },
+                  { 
+                    "name": "Biceps pull-up", 
+                    "id": "guT8YnS", 
+                    "sets": 3, 
+                    "reps": "6-8", 
+                    "note": "Use a doorway pull-up bar if available", 
+                    "image": "https://example.com/images/biceps_pull_up.jpg" 
+                  }
+                ],
+                "cooldown": [{ "name": "Gentle forward bend" }, { "name": "Deep breathing exercises" }]
+              },
+              "Wednesday": { /* same structure */ },
+              "Friday": { /* same structure */ }
+            },
+            "additional_notes": [
+              "Focus on form to protect your lower back.",
+              "Ensure proper nutrition.",
+              "Progressively increase resistance.",
+              "Consult a physical therapist if pain persists."
+            ]
+          }
+          
+          Only return valid JSON. Do not include markdown or explanations.
+        
+         `,
+        },
+        {
+          role: "user",
+          content: `New User Data:\n${JSON.stringify(
+            newUserData
+          )}\n\nPrevious Plan:\n${prevPlan}\n\n`,
+        },
+      ],
+    },
+    {
+      headers: {
+        Authorization:
+          "Bearer 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",
+      },
+    }
+  );
+  console.log(response, "response");
+  return response.data.choices[0].message.content;
+};
+
 const fetchTranscriptSummary = async (
   conversationId: string
 ): Promise<string | null> => {
@@ -186,7 +322,7 @@ const extractUserDataFromTranscript = async (summary: string) => {
     {
       headers: {
         Authorization:
-          "Bearer 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",
+          "Bearer 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",
       },
     }
   );
@@ -306,7 +442,7 @@ const generateWorkoutPlan = async (
     {
       headers: {
         Authorization:
-          "Bearer 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",
+          "Bearer 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",
       },
     }
   );
@@ -339,12 +475,12 @@ const saveToFirestore = async (data: any) => {
 
       await workoutPlanRef.set({
         conversationId: data.conversationId,
-        name: workoutPlan.name,
-        goal: workoutPlan.goal,
+        name: workoutPlan.name || "",
+        goal: workoutPlan.goal || "",
         schedule: workoutPlan.schedule,
         equipment: workoutPlan.equipment,
-        note: workoutPlan.note,
-        additional_notes: workoutPlan.additional_notes,
+        note: workoutPlan.note || "",
+        additional_notes: workoutPlan.additional_notes || "",
         warmup: dayPlan.warmup,
         cooldown: dayPlan.cooldown,
         createdAt: new Date(),
@@ -357,7 +493,7 @@ const saveToFirestore = async (data: any) => {
           sets: exercise.sets,
           reps: exercise.reps,
           note: exercise.note,
-          image: exercise.image,
+          image: exercise.image || "",
         });
 
         await exercisesRef.doc(exercise.id).collection("progress").add({
@@ -368,8 +504,12 @@ const saveToFirestore = async (data: any) => {
         });
       }
     }
+    await userRef.update({
+      orientation: true,
+    });
   } catch (error) {
     console.error("Error saving nested workout plan", error);
     throw error;
   }
 };
+

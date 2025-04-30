@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
         }
       } else {
         setUser(null);
+        router.replace("/login");
       }
       setInitializing(false);
     });
