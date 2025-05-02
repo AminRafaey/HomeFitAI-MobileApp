@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
-import PercentageCircle from "react-native-expo-circle-progress";
+// import PercentageCircle from "react-native-expo-circle-progress";
 import { collection, getDocs, doc, query, orderBy } from "firebase/firestore";
 import { DB } from "../../../firebaseConfig";
 import useAuth from "@/context/useAuth";
@@ -277,17 +277,6 @@ export default function TodayWorkout({ onWorkoutPress, currentWeek = 2 }) {
                             </View>
                           </View>
                         </View>
-                        <PercentageCircle
-                          radius={20}
-                          percent={isToday ? 30 : 0}
-                          borderWidth={4}
-                          color={"rgba(255, 55, 127, 1)"}
-                          textStyle={{
-                            fontSize: 12,
-                            fontWeight: "800",
-                            color: "rgba(255, 141, 81, 1)",
-                          }}
-                        />
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -459,3 +448,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+{
+  /* <PercentageCircle
+radius={20}
+percent={isToday ? 30 : 0}
+borderWidth={4}
+color={"rgba(255, 55, 127, 1)"}
+textStyle={{
+  fontSize: 12,
+  fontWeight: "800",
+  color: "rgba(255, 141, 81, 1)",
+}}
+/> */
+}

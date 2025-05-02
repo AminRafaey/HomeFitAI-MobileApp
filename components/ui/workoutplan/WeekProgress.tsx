@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import PercentageCircle from "react-native-expo-circle-progress";
+// import PercentageCircle from "react-native-expo-circle-progress";
 import DayPill from "./DayPill";
 
 export default function WeekProgress({
@@ -25,7 +25,7 @@ export default function WeekProgress({
       <View style={styles.weekHeader}>
         <Text style={weekTextStyle}>Week {week}</Text>
 
-        <PercentageCircle
+        {/* <PercentageCircle
           radius={30}
           percent={Math.floor(progress)}
           borderWidth={4}
@@ -35,7 +35,7 @@ export default function WeekProgress({
             fontWeight: "800",
             color: "rgba(255, 141, 81, 1)",
           }}
-        />
+        /> */}
       </View>
 
       <ScrollView
