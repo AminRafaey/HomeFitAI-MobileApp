@@ -7,8 +7,8 @@ import {
   SafeAreaView,
   Platform,
   ImageBackground,
+  ActivityIndicator,
 } from "react-native";
-// import PercentageCircle from "react-native-expo-circle-progress";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
@@ -53,6 +53,7 @@ export default function PlanLoader({
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
+          <ActivityIndicator size="large" />
           <View style={styles.textContainer}>
             {line1 && <Text style={styles.creatingText}>{line1}</Text>}
             {line2 && <Text style={styles.planText}>{line2}</Text>}
@@ -98,15 +99,3 @@ const styles = StyleSheet.create({
     color: "#ff377d",
   },
 });
-
-// <PercentageCircle
-// radius={55}
-// percent={Math.floor(progress)}
-// borderWidth={8}
-// color={"rgba(255, 55, 127, 1)"}
-// textStyle={{
-//   fontSize: 28,
-//   fontWeight: "800",
-//   color: "rgba(255, 141, 81, 1)",
-// }}
-// />

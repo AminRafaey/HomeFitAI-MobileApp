@@ -47,13 +47,11 @@ export default function ExerciseDetail({
         }
 
         if (exerciseDetailsRef.current) {
-          // Use cached data if available
           setExerciseDetails(exerciseDetailsRef.current);
           setLoading(false);
           return;
         }
 
-        // Extract day name from the date
         const dayAbbreviation = workout.date.split(", ")[1];
         let dayName = "";
 

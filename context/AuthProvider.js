@@ -3,6 +3,7 @@ import auth from "@react-native-firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { DB, timestamp } from "../firebaseConfig";
 import { router } from "expo-router";
+import { Alert } from "react-native";
 
 // =====================================================================
 
@@ -12,6 +13,8 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [signupLoading, setSignupLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
@@ -44,15 +47,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    setLoading(true);
     try {
       await auth().signInWithEmailAndPassword(email, password);
     } catch (error) {
       FirebaseErrorHandler(error);
+      Alert.alert("Login Error", error.message);
       console.log("Login error:", error.code);
+    } finally {
+      setLoading(false);
     }
   };
 
   const register = async (email, password) => {
+    setSignupLoading(true);
     try {
       const userCredential = await auth().createUserWithEmailAndPassword(
         email,
@@ -72,7 +80,10 @@ export const AuthProvider = ({ children }) => {
       router.push("/trainer");
     } catch (error) {
       FirebaseErrorHandler(error);
+      Alert.alert("Signup Error", error.message);
       console.error("Register error:", error.code);
+    } finally {
+      setSignupLoading(false);
     }
   };
 
@@ -93,6 +104,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        loading,
+        signupLoading,
         initializing,
       }}
     >

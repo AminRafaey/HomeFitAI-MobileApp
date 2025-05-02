@@ -18,7 +18,7 @@ const TopNavigation = () => {
     <View style={styles.container}>
       <TouchableOpacity style={styles.profileButton}>
         <View style={styles.iconInner}>
-          <Ionicons name="person" size={24} color="#E066FF" />
+          <Ionicons name="person" size={24} color="#D737FF" />
         </View>
       </TouchableOpacity>
 
@@ -45,7 +45,7 @@ const TopNavigation = () => {
         onPress={() => setModalVisible(true)}
       >
         <View style={styles.iconInner}>
-          <Ionicons name="settings" size={24} color="#FF7F50" />
+          <Ionicons name="settings" size={24} color="#EE4C06" />
         </View>
       </TouchableOpacity>
 
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#E066FF",
+    backgroundColor: "#D737FF",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#FF7F50",
+    backgroundColor: "#EE4C06",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",

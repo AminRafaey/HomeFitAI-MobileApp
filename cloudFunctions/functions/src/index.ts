@@ -261,11 +261,10 @@ Update the plan based on any changes in preferences, injuries, goals, or schedul
     {
       headers: {
         Authorization:
-          "Bearer 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",
+          "Bearer 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",
       },
     }
   );
-  console.log(response, "response");
   return response.data.choices[0].message.content;
 };
 
@@ -322,7 +321,7 @@ const extractUserDataFromTranscript = async (summary: string) => {
     {
       headers: {
         Authorization:
-          "Bearer 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",
+          "Bearer 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",
       },
     }
   );
@@ -379,7 +378,6 @@ const generateWorkoutPlan = async (
           content: `You are a professional personal trainer AI assistant. 
           You will be given user information including: name, gender, age, height, weight, fitness goal, available equipment, preferred days and times to exercise, and any past injuries.
           
-          Below is a list of available exercises, each containing a name, unique ID, and an image link. You must only use exercises from this list when generating the workout plan.
           Your workout plan should:
           - Match the user's goals and fitness level
           - Respect their injuries and avoid exercises that may aggravate them
@@ -431,7 +429,7 @@ const generateWorkoutPlan = async (
           
           Only return valid JSON. Do not include markdown or explanations.
           
-          Available Exercises: ${JSON.stringify(exercises)}`,
+`,
         },
         {
           role: "user",
@@ -442,7 +440,7 @@ const generateWorkoutPlan = async (
     {
       headers: {
         Authorization:
-          "Bearer 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",
+          "Bearer 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",
       },
     }
   );

@@ -14,23 +14,39 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import useAuth from "@/context/useAuth";
 
 export default function LoginScreen() {
-  const { login, register } = useAuth();
+  const { login, register, loading, signupLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = () => {
-    login(email, password);
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter both email and password.");
+      return;
+    }
+
+    login(email.trim(), password);
   };
 
-  const handleSignUp = async () => {
-    register(email, password);
+  const handleSignUp = () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter both email and password.");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters long.");
+      return;
+    }
+
+    register(email.trim(), password);
   };
 
   return (
@@ -101,8 +117,13 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.loginButton}
                 onPress={handleLogin}
+                disabled={loading}
               >
-                <Text style={styles.loginButtonText}>Login</Text>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.loginButtonText}>Login</Text>
+                )}
               </TouchableOpacity>
 
               <View style={styles.divider}>
@@ -114,8 +135,13 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.signUpButton}
                 onPress={handleSignUp}
+                disabled={signupLoading}
               >
-                <Text style={styles.signUpButtonText}>Sign Up</Text>
+                {signupLoading ? (
+                  <ActivityIndicator color="#ff377d" />
+                ) : (
+                  <Text style={styles.signUpButtonText}>Sign Up</Text>
+                )}
               </TouchableOpacity>
             </View>
 

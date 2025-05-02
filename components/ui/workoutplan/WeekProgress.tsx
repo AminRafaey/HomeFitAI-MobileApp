@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-// import PercentageCircle from "react-native-expo-circle-progress";
+import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import DayPill from "./DayPill";
+import { useEffect, useState } from "react";
 
 export default function WeekProgress({
   schedule,
@@ -20,22 +20,35 @@ export default function WeekProgress({
     active && styles.activeWeekTitle,
     completed && styles.completedWeekTitle,
   ];
+
   return (
     <View style={containerStyle}>
       <View style={styles.weekHeader}>
         <Text style={weekTextStyle}>Week {week}</Text>
-
-        {/* <PercentageCircle
-          radius={30}
-          percent={Math.floor(progress)}
-          borderWidth={4}
-          color={"rgba(255, 55, 127, 1)"}
-          textStyle={{
-            fontSize: 12,
-            fontWeight: "800",
-            color: "rgba(255, 141, 81, 1)",
-          }}
-        /> */}
+        {week === 1 && (
+          <Image
+            style={{ width: 50, height: 50 }}
+            source={require("../../../assets/images/100P.png")}
+          />
+        )}
+        {week === 2 && (
+          <Image
+            style={{ width: 50, height: 50 }}
+            source={require("../../../assets/images/three.png")}
+          />
+        )}
+        {week === 3 && (
+          <Image
+            style={{ width: 50, height: 50 }}
+            source={require("../../../assets/images/0percent.png")}
+          />
+        )}
+        {week === 4 && (
+          <Image
+            style={{ width: 50, height: 50 }}
+            source={require("../../../assets/images/0percent.png")}
+          />
+        )}
       </View>
 
       <ScrollView
@@ -56,7 +69,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E4E7EC",
     borderRadius: 16,
-    padding: 12,
+    padding: 10,
     marginBottom: 12,
   },
   activeWeekContainer: {
