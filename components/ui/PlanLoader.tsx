@@ -9,6 +9,7 @@ import {
   ImageBackground,
   ActivityIndicator,
 } from "react-native";
+import * as Progress from "react-native-progress";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
@@ -53,7 +54,29 @@ export default function PlanLoader({
       <StatusBar style="dark" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          <ActivityIndicator size="large" />
+          <View
+            style={{
+              width: 150,
+              height: 150,
+              backgroundColor: "white",
+              borderRadius: 75,
+            }}
+          >
+            <Progress.Circle
+              size={150}
+              progress={progress / 100}
+              thickness={10}
+              showsText={true}
+              color="#ff337f"
+              borderWidth={0}
+              strokeCap="square"
+              formatText={() => (
+                <Text style={[styles.waitText, { fontSize: 28 }]}>
+                  {Math.round(progress)}%
+                </Text>
+              )}
+            />
+          </View>
           <View style={styles.textContainer}>
             {line1 && <Text style={styles.creatingText}>{line1}</Text>}
             {line2 && <Text style={styles.planText}>{line2}</Text>}

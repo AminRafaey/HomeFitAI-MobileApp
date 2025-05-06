@@ -25,7 +25,6 @@ export default function AICoachingScreen() {
 
   useEffect(() => {
     ref.current = messages;
-    console.log("hello this is a testing console");
   }, [messages]);
   const getCurrentDate = () => {
     const date = new Date();

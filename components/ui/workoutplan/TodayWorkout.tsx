@@ -10,13 +10,18 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { collection, getDocs, doc, query, orderBy } from "firebase/firestore";
 import { DB } from "../../../firebaseConfig";
+import * as Progress from "react-native-progress";
 import useAuth from "@/context/useAuth";
 import workoutCache from "./workoutcache";
 
-export default function TodayWorkout({ onWorkoutPress, currentWeek = 2 }) {
+export default function TodayWorkout({
+  onWorkoutPress,
+  currentWeek = 2,
+  setExerciseDetailstate,
+}) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -193,9 +198,13 @@ export default function TodayWorkout({ onWorkoutPress, currentWeek = 2 }) {
       style={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
+      <TouchableOpacity
+        style={styles.retryButton}
+        onPress={() => setExerciseDetailstate(false)}
+      >
+        <Ionicons name="arrow-back" size={16} color="white" />
+      </TouchableOpacity>
       <View style={styles.todayContentContainer}>
-        <Text style={styles.weekTitleLarge}>Week {currentWeek}</Text>
-
         {workouts.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No workouts scheduled</Text>
@@ -277,18 +286,14 @@ export default function TodayWorkout({ onWorkoutPress, currentWeek = 2 }) {
                             </View>
                           </View>
                         </View>
-                        {dayWorkout.type === "today" && (
-                          <Image
-                            style={{ width: 50, height: 50 }}
-                            source={require("../../../assets/images/three.png")}
-                          />
-                        )}
-                        {dayWorkout.type === "upcoming" && (
-                          <Image
-                            style={{ width: 50, height: 50 }}
-                            source={require("../../../assets/images/0percent.png")}
-                          />
-                        )}
+                        <Progress.Circle
+                          progress={isToday ? 30 / 100 : 0}
+                          size={50}
+                          color="rgba(255, 55, 127, 1)"
+                          unfilledColor="#f2f4f7"
+                          showsText
+                          borderWidth={0}
+                        />
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -442,9 +447,13 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: "#FF5B7D",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    padding: 12,
+    borderRadius: 40,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
   },
   retryButtonText: {
     color: "white",

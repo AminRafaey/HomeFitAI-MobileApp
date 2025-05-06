@@ -15,11 +15,8 @@ import { collection, getDocs, doc } from "firebase/firestore";
 import ExerciseItem from "./ExerciseItem";
 import { DB } from "@/firebaseConfig";
 import useAuth from "@/context/useAuth";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 
 export default function ExerciseDetail({
-  workout,
   onBackPress,
   setExerciseDetailstate,
 }) {
@@ -30,117 +27,102 @@ export default function ExerciseDetail({
   const [cooldownEnabled, setCooldownEnabled] = useState(true);
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const exerciseDetailsRef = useRef(null);
-
-  const totalCalories = workout.exercises
-    .map((item) => parseInt(item.calories.replace(" kcal", ""), 10))
-    .reduce((acc, current) => acc + current, 0);
+  const exerciseCount = exerciseDetails?.main?.length;
 
   useEffect(() => {
-    const fetchExerciseDetails = async () => {
-      if (!workout) return;
-
+    const fetchTodayWorkoutDetails = async () => {
       try {
         setLoading(true);
         const userId = user?.uid;
-        if (!userId) {
-          throw new Error("User not authenticated");
-        }
+        if (!userId) throw new Error("User not authenticated");
 
-        if (exerciseDetailsRef.current) {
+        const today = new Date();
+        const dayNames = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+        const todayName = dayNames[today.getDay()];
+
+        if (
+          exerciseDetailsRef.current &&
+          exerciseDetailsRef.current.dayName === todayName
+        ) {
           setExerciseDetails(exerciseDetailsRef.current);
           setLoading(false);
           return;
         }
 
-        const dayAbbreviation = workout.date.split(", ")[1];
-        let dayName = "";
+        // Fetch workout document
+        const workoutDocRef = doc(
+          DB,
+          "users",
+          userId,
+          "workoutPlans",
+          todayName
+        );
+        const exercisesRef = collection(workoutDocRef, "exercises");
+        const exercisesSnapshot = await getDocs(exercisesRef);
 
-        switch (dayAbbreviation) {
-          case "Mon":
-            dayName = "Monday";
-            break;
-          case "Tue":
-            dayName = "Tuesday";
-            break;
-          case "Wed":
-            dayName = "Wednesday";
-            break;
-          case "Thu":
-            dayName = "Thursday";
-            break;
-          case "Fri":
-            dayName = "Friday";
-            break;
-          case "Sat":
-            dayName = "Saturday";
-            break;
-          case "Sun":
-            dayName = "Sunday";
-            break;
-          default:
-            dayName = dayAbbreviation;
+        if (exercisesSnapshot.empty) {
+          setExerciseDetails(null);
+          return;
         }
 
-        // Initialize exercise data
+        const workoutData = (
+          await getDocs(collection(DB, "users", userId, "workoutPlans"))
+        ).docs
+          .find((doc) => doc.id === todayName)
+          ?.data();
+
+        const warmup = workoutData?.warmup || [];
+        const cooldown = workoutData?.cooldown || [];
+        const equipment = workoutData?.equipment || [];
+
         const exerciseData = {
-          name: workout.name,
-          date: workout.date,
-          calories: Number.parseInt(workout.exercises[0].calories, 10) || 85,
+          name: `${todayName}'s Workout`,
+          date: today.toDateString(),
+          dayName: todayName,
           warmup: [],
           main: [],
           cooldown: [],
-          equipment: workout.exercises[0].equipment || [],
+          equipment,
         };
 
-        // Fill warmup exercises
-        if (
-          workout.exercises[0].warmup &&
-          Array.isArray(workout.exercises[0].warmup)
-        ) {
-          workout.exercises[0].warmup.forEach((item, index) => {
-            exerciseData.warmup.push({
-              id: `warmup-${index}`,
-              name: item.name,
-              duration: "01:00", // Optional: assign static 1min or customize
-              sets: 1,
-              reps: 10,
-              note: "",
-            });
-          });
-        }
+        // Warmup
+        warmup.forEach((item, index) =>
+          exerciseData.warmup.push({
+            id: `warmup-${index}`,
+            name: item.name,
+            duration: "01:00",
+            sets: 1,
+            reps: 10,
+            note: "",
+          })
+        );
 
-        // Fill cooldown exercises
-        if (
-          workout.exercises[0].cooldown &&
-          Array.isArray(workout.exercises[0].cooldown)
-        ) {
-          workout.exercises[0].cooldown.forEach((item, index) => {
-            exerciseData.cooldown.push({
-              id: `cooldown-${index}`,
-              name: item.name,
-              duration: "01:00", // Optional: static 1min or customize
-              sets: 1,
-              reps: 10,
-              note: "",
-            });
-          });
-        }
+        // Cooldown
+        cooldown.forEach((item, index) =>
+          exerciseData.cooldown.push({
+            id: `cooldown-${index}`,
+            name: item.name,
+            duration: "01:00",
+            sets: 1,
+            reps: 10,
+            note: "",
+          })
+        );
 
-        // Fetch main workout exercises from Firestore
-        const dayRef = doc(DB, "users", userId, "workoutPlans", dayName);
-        const exercisesRef = collection(dayRef, "exercises");
-        const exercisesSnapshot = await getDocs(exercisesRef);
-
-        exerciseData.totalExercises = exercisesSnapshot.size;
-
+        // Main exercises
         exercisesSnapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          const name = data.name || "Unnamed Exercise";
           const sets = data.sets || 3;
           const reps = data.reps || "8-10";
-          const image = data.image || null;
 
-          // Calculate average reps
           let avgReps = 0;
           if (typeof reps === "string" && reps.includes("-")) {
             const [min, max] = reps
@@ -157,36 +139,44 @@ export default function ExerciseDetail({
             sets * avgReps * secondsPerRep + (sets - 1) * restBetweenSets;
           const minutes = Math.floor(totalSeconds / 60);
           const seconds = totalSeconds % 60;
+          const calories = minutes * 8;
           const duration = `${minutes.toString().padStart(2, "0")}:${seconds
             .toString()
             .padStart(2, "0")}`;
 
-          const exerciseItem = {
+          exerciseData.main.push({
             id: docSnap.id,
-            name: name,
-            duration: duration,
+            name: data.name || "Unnamed",
+            duration,
+            sets,
+            reps,
             note: data.note || "",
-            sets: sets,
-            reps: reps,
-            image: data.image,
-          };
-
-          exerciseData.main.push(exerciseItem);
+            image: data.image || null,
+            calories: `${calories} kcal`,
+          });
         });
+        const totalCalories = exerciseData.main
+          .map((item) =>
+            typeof item.calories === "string"
+              ? parseInt(item.calories.replace(" kcal", ""), 10)
+              : item.calories || 0
+          )
+          .reduce((acc, current) => acc + current, 0);
 
-        // Cache the fetched data
+        exerciseData.calories = totalCalories;
+
         exerciseDetailsRef.current = exerciseData;
         setExerciseDetails(exerciseData);
       } catch (err) {
-        console.error("Error fetching exercise details:", err);
+        console.error("Failed to fetch today's workout:", err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchExerciseDetails();
-  }, [workout]);
+    fetchTodayWorkoutDetails();
+  }, [user]);
 
   if (loading) {
     return (
@@ -242,20 +232,14 @@ export default function ExerciseDetail({
       style={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <TouchableOpacity
-        style={styles.retryButton}
-        onPress={() => setExerciseDetailstate(false)}
-      >
-        <Ionicons name="arrow-back" size={16} color="white" />
-      </TouchableOpacity>
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Calorie burn</Text>
-          <Text style={styles.statValue}>{totalCalories}</Text>
+          <Text style={styles.statValue}>{exerciseDetails.calories}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Total Exercise</Text>
-          <Text style={styles.statValue}>{exerciseDetails.totalExercises}</Text>
+          <Text style={styles.statValue}>{exerciseCount}</Text>
         </View>
       </View>
 
@@ -299,6 +283,7 @@ export default function ExerciseDetail({
             {exerciseDetails.warmup.length > 0 ? (
               exerciseDetails.warmup.map((exercise, index) => (
                 <ExerciseItem
+                  id={exercise.id}
                   index={index}
                   key={`warmup-${index}`}
                   name={exercise.name}
@@ -328,6 +313,7 @@ export default function ExerciseDetail({
         {exerciseDetails.main.length > 0 ? (
           exerciseDetails.main.map((exercise, index) => (
             <ExerciseItem
+              id={exercise.id}
               index={index}
               key={index}
               name={exercise.name}
@@ -364,6 +350,7 @@ export default function ExerciseDetail({
             {exerciseDetails.cooldown.length > 0 ? (
               exerciseDetails.cooldown.map((exercise, index) => (
                 <ExerciseItem
+                  id={exercise.id}
                   index={index}
                   key={`cooldown-${index}`}
                   name={exercise.name}

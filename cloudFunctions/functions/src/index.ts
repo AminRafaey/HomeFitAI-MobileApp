@@ -187,15 +187,17 @@ const generateModifiedWorkoutPlan = async (
   exercises: Exercise[],
   prevPlan: string
 ) => {
+  const exerciseCSV = exercises.map((e) => `${e.name}|${e.id}`).join("\n");
   const response = await axios.post(
     "https://api.openai.com/v1/chat/completions",
     {
-      model: "gpt-4o",
+      model: "gpt-4-turbo",
       messages: [
         {
           role: "system",
           content: `You are a professional fitness coach assistant.
-You are given new user data and their previous workout plan.
+You are given new user data and their previous workout plan also the ex.
+You will also given a list of available exercises, each containing a name, unique ID, and an image link. You must only use exercises from this list when generating the workout plan.
 Update the plan based on any changes in preferences, injuries, goals, or schedule.
          Your workout plan should:
           - Match the user's goals and fitness level
@@ -254,14 +256,14 @@ Update the plan based on any changes in preferences, injuries, goals, or schedul
           role: "user",
           content: `New User Data:\n${JSON.stringify(
             newUserData
-          )}\n\nPrevious Plan:\n${prevPlan}\n\n`,
+          )}\n\nPrevious Plan:\n${prevPlan}\n\nAvailable exercises (format: name|id):${exerciseCSV}`,
         },
       ],
     },
     {
       headers: {
         Authorization:
-          "Bearer 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",
+          "Bearer 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",
       },
     }
   );
@@ -305,7 +307,7 @@ const extractUserDataFromTranscript = async (summary: string) => {
   const response = await axios.post(
     "https://api.openai.com/v1/chat/completions",
     {
-      model: "gpt-4o",
+      model: "gpt-4",
       messages: [
         {
           role: "system",
@@ -321,7 +323,7 @@ const extractUserDataFromTranscript = async (summary: string) => {
     {
       headers: {
         Authorization:
-          "Bearer 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",
+          "Bearer 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",
       },
     }
   );
@@ -368,85 +370,100 @@ const generateWorkoutPlan = async (
   userData: UserData,
   exercises: Exercise[]
 ) => {
-  const response = await axios.post(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are a professional personal trainer AI assistant. 
-          You will be given user information including: name, gender, age, height, weight, fitness goal, available equipment, preferred days and times to exercise, and any past injuries.
-          
-          Your workout plan should:
-          - Match the user's goals and fitness level
-          - Respect their injuries and avoid exercises that may aggravate them
-          - Fit within their schedule (days and times available)
-          - Include warm-up and cool-down suggestions
-          - Balance muscle groups and allow for rest days
-          
-          You MUST return the response as a valid JSON object with the following format:
-          
+  try {
+    const exerciseCSV = exercises.map((e) => `${e.name}|${e.id}`).join("\n");
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4-turbo",
+        messages: [
           {
-            "name": "John",
-            "goal": "Build muscle and lose fat",
-            "schedule": ["Monday", "Wednesday", "Friday"],
-            "equipment": ["Dumbbells", "Resistance bands"],
-            "note": "Avoid exercises that may strain the lower back",
-            "weekly_plan": {
-              "Monday": {
-                "warmup": [{ "name": "Arm circles" }, { "name": "Marching in place" }],
-                "workout": [
-                  { 
-                    "name": "Bodyweight squatting row", 
-                    "id": "3xK09Sk", 
-                    "sets": 3, 
-                    "reps": "8-10", 
-                    "note": "Focus on maintaining proper form", 
-                    "image": "https://example.com/images/squatting_row.jpg" 
-                  },
-                  { 
-                    "name": "Biceps pull-up", 
-                    "id": "guT8YnS", 
-                    "sets": 3, 
-                    "reps": "6-8", 
-                    "note": "Use a doorway pull-up bar if available", 
-                    "image": "https://example.com/images/biceps_pull_up.jpg" 
-                  }
-                ],
-                "cooldown": [{ "name": "Gentle forward bend" }, { "name": "Deep breathing exercises" }]
-              },
-              "Wednesday": { /* same structure */ },
-              "Friday": { /* same structure */ }
-            },
-            "additional_notes": [
-              "Focus on form to protect your lower back.",
-              "Ensure proper nutrition.",
-              "Progressively increase resistance.",
-              "Consult a physical therapist if pain persists."
-            ]
-          }
-          
-          Only return valid JSON. Do not include markdown or explanations.
-          
-`,
-        },
-        {
-          role: "user",
-          content: userData,
-        },
-      ],
-    },
-    {
-      headers: {
-        Authorization:
-          "Bearer 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",
-      },
-    }
-  );
+            role: "system",
+            content: `You are a professional personal trainer AI assistant. 
+            You will be given user information including: name, gender, age, height, weight, fitness goal, available equipment, preferred days and times to exercise, and any past injuries.
+            You will also given a list of available exercises, each containing a name, unique ID, and an image link. You must only use exercises from this list when generating the workout plan.
 
-  return response.data.choices[0].message.content;
+            Your workout plan should:
+            - Match the user's goals and fitness level
+            - Respect their injuries and avoid exercises that may aggravate them
+            - Fit within their schedule (days and times available)
+            - Include warm-up and cool-down suggestions
+            - Balance muscle groups and allow for rest days
+
+            You MUST return the response as a valid JSON object with the following format:
+
+            {
+              "name": "John",
+              "goal": "Build muscle and lose fat",
+              "schedule": ["Monday", "Wednesday", "Friday"],
+              "equipment": ["Dumbbells", "Resistance bands"],
+              "note": "Avoid exercises that may strain the lower back",
+              "weekly_plan": {
+                "Monday": {
+                  "warmup": [{ "name": "Arm circles" }, { "name": "Marching in place" }],
+                  "workout": [
+                    { 
+                      "name": "Bodyweight squatting row", 
+                      "id": "3xK09Sk", 
+                      "sets": 3, 
+                      "reps": "8-10", 
+                      "note": "Focus on maintaining proper form", 
+                      "image": "https://example.com/images/squatting_row.jpg" 
+                    },
+                    { 
+                      "name": "Biceps pull-up", 
+                      "id": "guT8YnS", 
+                      "sets": 3, 
+                      "reps": "6-8", 
+                      "note": "Use a doorway pull-up bar if available", 
+                      "image": "https://example.com/images/biceps_pull_up.jpg" 
+                    }
+                  ],
+                  "cooldown": [{ "name": "Gentle forward bend" }, { "name": "Deep breathing exercises" }]
+                },
+                "Wednesday": {},
+                "Friday": {}
+              },
+              "additional_notes": [
+                "Focus on form to protect your lower back.",
+                "Ensure proper nutrition.",
+                "Progressively increase resistance.",
+                "Consult a physical therapist if pain persists."
+              ]
+            }
+
+            Only return valid JSON. Do not include markdown or explanations.
+            `,
+          },
+          {
+            role: "system",
+            content: `Available exercises (format: name|id):${exerciseCSV}`,
+          },
+          {
+            role: "user",
+            content: userData,
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization:
+            "Bearer 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",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data.choices[0].message.content;
+  } catch (error: any) {
+    console.error(
+      "Workout plan generation failed:",
+      error?.response?.data?.error?.message || error.message
+    );
+    throw new Error("Failed to generate workout plan.");
+  }
 };
+
 const saveToFirestore = async (data: any) => {
   try {
     const firestore = getFirestore();

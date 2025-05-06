@@ -21,6 +21,8 @@ import useAuth from "@/context/useAuth";
 
 export default function AICoachingScreen() {
   const { user, logout } = useAuth();
+  const flatListRef = useRef<FlatList>(null);
+
   const [messages, setMessages] = useState<
     { message: string; source: string }[]
   >([]);
@@ -33,6 +35,12 @@ export default function AICoachingScreen() {
   const ref = useRef(null);
   useEffect(() => {
     ref.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    if (flatListRef.current && messages.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
   }, [messages]);
 
   const handleSetMessages = (newMessages: {
@@ -112,6 +120,7 @@ export default function AICoachingScreen() {
           <View style={styles.additionalBoxContainer}>
             <BlurView intensity={100} tint="dark" style={styles.additionalBox}>
               <FlatList
+                ref={flatListRef}
                 data={messages}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (

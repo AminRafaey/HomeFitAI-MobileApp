@@ -50,7 +50,7 @@ export default function ConvAiDOMComponent({
           pathname: "/loading",
           params: {
             text: "Creating your\nPersonal Plan\nPlease wait...",
-            time: "30000",
+            time: "20000",
             nextRoute:
               "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
           },
@@ -83,8 +83,6 @@ export default function ConvAiDOMComponent({
     onError: (error) => console.error("Error:", error),
   });
   const changeWorkoutPlan = async ({ goal, days, intensity }) => {
-    console.log("changeWorkoutPlan called with:", { goal, days, intensity });
-    console.log(conversationIdRef.current, userId.uid);
     geUpdatedWorkoutPlan({
       conversationId: conversationIdRef.current,
       userId: userId.uid,
@@ -92,7 +90,6 @@ export default function ConvAiDOMComponent({
     })
       .then((response) => {
         const data = response.data;
-        console.log(data, "Workout plan updated successfully:");
       })
       .catch((error) => {
         console.error("Error fetching workout plan:", error);
@@ -104,7 +101,7 @@ export default function ConvAiDOMComponent({
       pathname: "/loading",
       params: {
         text: "Updating your\nPersonal Plan\nPlease wait...",
-        time: "30000",
+        time: "20000",
         nextRoute:
           "/success?title=Your%20Plan%20Has%20Been%20Updated&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
       },
@@ -151,8 +148,8 @@ export default function ConvAiDOMComponent({
   const buttonText = loading
     ? "Please wait..."
     : conversation.status === "disconnected"
-    ? `Start ${text}`
-    : `End ${text}`;
+      ? `Start ${text}`
+      : `End ${text}`;
   return (
     <Pressable
       style={[
@@ -177,8 +174,8 @@ export default function ConvAiDOMComponent({
           loading
             ? ["#333", "#999"]
             : conversation.status === "connected"
-            ? ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]
-            : ["rgba(255, 55, 127, 1)", "rgba(255, 141, 81, 1)"]
+              ? ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]
+              : ["rgba(255, 55, 127, 1)", "rgba(255, 141, 81, 1)"]
         }
       >
         {loading ? (
@@ -203,10 +200,10 @@ export default function ConvAiDOMComponent({
             loading
               ? { color: "#ddd" }
               : conversation.status === "connected"
-              ? {
-                  color: "rgba(255,141,82,1)",
-                }
-              : { color: "#fff" },
+                ? {
+                    color: "rgba(255,141,82,1)",
+                  }
+                : { color: "#fff" },
           ]}
         >
           {buttonText}

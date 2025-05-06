@@ -100,7 +100,7 @@ export default function SuccessMessage({ title, subtitle, onPress }) {
           ]}
         >
           <TouchableOpacity style={styles.continueButton} onPress={onPress}>
-            <Text style={styles.continueButtonText}>Get Started</Text>
+            <Text style={styles.continueButtonText}>See your Plan</Text>
             <Feather
               name="arrow-right"
               size={20}

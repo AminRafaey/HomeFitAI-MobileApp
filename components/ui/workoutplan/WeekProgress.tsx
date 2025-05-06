@@ -1,13 +1,19 @@
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import DayPill from "./DayPill";
-import { useEffect, useState } from "react";
-
+import * as Progress from "react-native-progress";
 export default function WeekProgress({
   schedule,
   week,
   progress,
   active,
   completed,
+  onPress,
 }) {
   const containerStyle = [
     styles.weekContainer,
@@ -22,45 +28,32 @@ export default function WeekProgress({
   ];
 
   return (
-    <View style={containerStyle}>
-      <View style={styles.weekHeader}>
-        <Text style={weekTextStyle}>Week {week}</Text>
-        {week === 1 && (
-          <Image
-            style={{ width: 50, height: 50 }}
-            source={require("../../../assets/images/100P.png")}
-          />
-        )}
-        {week === 2 && (
-          <Image
-            style={{ width: 50, height: 50 }}
-            source={require("../../../assets/images/three.png")}
-          />
-        )}
-        {week === 3 && (
-          <Image
-            style={{ width: 50, height: 50 }}
-            source={require("../../../assets/images/0percent.png")}
-          />
-        )}
-        {week === 4 && (
-          <Image
-            style={{ width: 50, height: 50 }}
-            source={require("../../../assets/images/0percent.png")}
-          />
-        )}
-      </View>
+    <TouchableOpacity onPress={() => onPress(true)}>
+      <View style={containerStyle}>
+        <View style={styles.weekHeader}>
+          <Text style={weekTextStyle}>Week {week}</Text>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.dayPillContainer}
-      >
-        {schedule.map((day, index) => (
-          <DayPill key={index} day={day.slice(0, 3)} completed={completed} />
-        ))}
-      </ScrollView>
-    </View>
+          <Progress.Circle
+            progress={progress / 100}
+            size={50}
+            color="#ff337f"
+            unfilledColor="#f2f4f7"
+            showsText
+            borderWidth={0}
+          />
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.dayPillContainer}
+        >
+          {schedule.map((day, index) => (
+            <DayPill key={index} day={day.slice(0, 3)} completed={completed} />
+          ))}
+        </ScrollView>
+      </View>
+    </TouchableOpacity>
   );
 }
 

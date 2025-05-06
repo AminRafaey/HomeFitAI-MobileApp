@@ -80,6 +80,7 @@ export default function WorkoutPlanModal({ onClose }) {
     setShowExerciseDetail(false);
   };
 
+
   const totalWeeks = 4;
 
   const weeks = useMemo(() => {
@@ -181,23 +182,25 @@ export default function WorkoutPlanModal({ onClose }) {
                 progress={progress}
                 active={active}
                 completed={completed}
+                onPress={handleWorkoutPress}
               />
             ))}
           </ScrollView>
         )}
 
         {activeTab === "today" && !showExerciseDetail && (
-          <TodayWorkout
-            onWorkoutPress={handleWorkoutPress}
-            currentWeek={currentWeek}
+          <ExerciseDetail
+            setExerciseDetailstate={setShowExerciseDetail}
+            // workout={selectedWorkout}
+            onBackPress={handleBackToToday}
           />
         )}
 
         {showExerciseDetail && (
-          <ExerciseDetail
+          <TodayWorkout
             setExerciseDetailstate={setShowExerciseDetail}
-            workout={selectedWorkout}
-            onBackPress={handleBackToToday}
+            onWorkoutPress={handleWorkoutPress}
+            currentWeek={currentWeek}
           />
         )}
       </View>
