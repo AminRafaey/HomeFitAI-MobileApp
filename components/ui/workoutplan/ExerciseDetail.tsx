@@ -218,10 +218,9 @@ export default function ExerciseDetail({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>No exercise details found</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={onBackPress}>
-            <Text style={styles.retryButtonText}>Go Back</Text>
-          </TouchableOpacity>
+          <Text style={styles.errorText}>
+            No exercise details found for today PLease check your schedule
+          </Text>
         </View>
       </ScrollView>
     );

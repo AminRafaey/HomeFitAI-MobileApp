@@ -31,31 +31,54 @@ const ref = useRef(null);
 useEffect(() => {
   if (!user) return;
 
+  let isCancelled = false;
+
   const fetchWorkoutPlans = async () => {
-    try {
-      const workoutPlanRef = collection(DB, "users", user.uid, "workoutPlans");
-      const snapshot = await getDocs(workoutPlanRef);
+    let success = false;
 
-      const workoutNames = snapshot.docs.map((doc) => doc.data());
-      setUserName(workoutNames[0]?.name || "");
+    while (!success && !isCancelled) {
+      try {
+        const workoutPlanRef = collection(
+          DB,
+          "users",
+          user.uid,
+          "workoutPlans"
+        );
+        const snapshot = await getDocs(workoutPlanRef);
 
-      const response = await getAgentData({
-        conversationId: workoutNames[0]?.conversationId,
-        userId: user.uid,
-      });
+        const workoutNames = snapshot.docs.map((doc) => doc.data());
+        setUserName(workoutNames[0]?.name || "");
 
-      const data = response.data;
-      setUserData({
-        plan: data.latestOpenAIPlan.cleanedWorkoutPlan,
-        conversation: data?.transcript,
-        history: data?.workoutHistory,
-      });
-    } catch (error) {
-      console.error("Error fetching workout plan:", error);
+        const response = await getAgentData({
+          conversationId: workoutNames[0]?.conversationId,
+          userId: user.uid,
+        });
+
+        const data = response.data;
+
+        if (data?.latestOpenAIPlan) {
+          setUserData({
+            plan: data.latestOpenAIPlan.cleanedWorkoutPlan,
+            conversation: data?.transcript,
+            history: data?.workoutHistory,
+          });
+          success = true;
+        } else {
+          console.log("Agent data not ready, retrying...");
+          await new Promise((res) => setTimeout(res, 3000));
+        }
+      } catch (error) {
+        console.error("Error fetching workout plan:", error);
+        await new Promise((res) => setTimeout(res, 3000));
+      }
     }
   };
 
   fetchWorkoutPlans();
+
+  return () => {
+    isCancelled = true;
+  };
 }, [user]);
 
 useEffect(() => {
