@@ -16,6 +16,7 @@ import { DB } from "../../../firebaseConfig";
 import * as Progress from "react-native-progress";
 import useAuth from "@/context/useAuth";
 import workoutCache from "./workoutcache";
+import fetchTodayWorkoutDetails from "@/utils/static/helpers/fetchTodayWorkoutDetails";
 
 export default function TodayWorkout({
   onWorkoutPress,
@@ -24,171 +25,30 @@ export default function TodayWorkout({
 }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [workouts, setWorkouts] = useState([]);
-  const loadingRef = useRef(false);
-
-  const fetchWorkoutData = async () => {
-    try {
-      setLoading(true);
-      loadingRef.current = true;
-
-      const userId = user?.uid;
-      if (!userId) throw new Error("User not authenticated");
-
-      if (workoutCache.userId === userId && workoutCache.data) {
-        setWorkouts(workoutCache.data);
-        setLoading(false);
-        return;
-      }
-
-      const workoutPlansRef = collection(
-        doc(DB, "users", userId),
-        "workoutPlans"
-      );
-      const workoutPlansSnapshot = await getDocs(workoutPlansRef);
-
-      const workoutDays = [];
-      const today = new Date();
-      const dayNames = [
-        "Sunday",
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-      ];
-      const todayName = dayNames[today.getDay()];
-
-      for (const dayDoc of workoutPlansSnapshot.docs) {
-        const dayName = dayDoc.id;
-        const isToday = dayName === todayName;
-
-        const exercisesRef = collection(dayDoc.ref, "exercises");
-        const exercisesSnapshot = await getDocs(
-          query(exercisesRef, orderBy("name"))
-        );
-        const workoutData = dayDoc.data();
-        if (exercisesSnapshot.empty) continue;
-
-        const exercises = [];
-
-        for (const exerciseDoc of exercisesSnapshot.docs) {
-          const exerciseData = exerciseDoc.data();
-          const sets = exerciseData.sets || 3;
-          const reps = exerciseData.reps || "8-10";
-          const estimatedTimePerRep = 3;
-          const restBetweenSets = 30;
-          let avgReps = 0;
-          if (typeof reps === "string" && reps.includes("-")) {
-            const [min, max] = reps
-              .split("-")
-              .map((num) => Number.parseInt(num, 10));
-            avgReps = (min + max) / 2;
-          } else {
-            avgReps = Number.parseInt(reps, 10) || 8;
-          }
-
-          const totalSeconds =
-            sets * avgReps * estimatedTimePerRep + (sets - 1) * restBetweenSets;
-          const minutes = Math.ceil(totalSeconds / 60);
-          const caloriesPerMinute = 8;
-          const calories = minutes * caloriesPerMinute;
-
-          exercises.push({
-            id: exerciseDoc.id,
-            name: exerciseData.name || "Unnamed Exercise",
-            duration: `${minutes} mins`,
-            calories: `${calories} kcal`,
-            percentComplete: isToday ? 30 : 0,
-            note: exerciseData.note,
-            sets,
-            reps,
-            warmup: workoutData.warmup,
-            cooldown: workoutData.cooldown,
-            equipment: workoutData.equipment,
-            goal: workoutData.goal,
-          });
-        }
-
-        const date = new Date();
-        if (!isToday) {
-          const currentDayIndex = today.getDay();
-          const targetDayIndex = dayNames.indexOf(dayName);
-          const daysToAdd = (targetDayIndex - currentDayIndex + 7) % 7;
-          date.setDate(today.getDate() + daysToAdd);
-        }
-
-        const monthNames = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        const formattedDate = `${
-          monthNames[date.getMonth()]
-        } ${date.getDate()}, ${dayName.substring(0, 3)}`;
-
-        if (exercises.length > 0) {
-          workoutDays.push({
-            type: isToday ? "today" : "upcoming",
-            date: formattedDate,
-            exercises,
-            timestamp: date,
-          });
-        }
-      }
-
-      workoutDays.sort((a, b) => a.timestamp - b.timestamp);
-
-      workoutCache.data = workoutDays;
-      workoutCache.userId = userId;
-
-      setWorkouts(workoutDays);
-    } catch (err) {
-      console.error("Error fetching workout data:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      loadingRef.current = false;
-    }
-  };
 
   useEffect(() => {
-    if (!loadingRef.current) fetchWorkoutData();
-  }, [currentWeek]);
+    const loadWorkout = async () => {
+      try {
+        const data = await fetchTodayWorkoutDetails(user.uid);
+        setWorkouts(data);
+      } catch (error) {
+        console.error("Failed to fetch workout details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const retryFetch = () => {
-    workoutCache.data = null;
-    workoutCache.userId = null;
-    fetchWorkoutData();
-  };
+    if (user?.uid) {
+      loadWorkout();
+    }
+  }, [user?.uid]);
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF5B7D" />
         <Text style={styles.loadingText}>Loading your workouts...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={retryFetch}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -221,12 +81,7 @@ export default function TodayWorkout({
                 ? styles.timelineLabelToday
                 : styles.timelineLabelUpcoming;
 
-              const totalMinutes = dayWorkout.exercises.reduce((sum, ex) => {
-                return sum + (parseInt(ex.duration) || 0);
-              }, 0);
-              const totalCalories = dayWorkout.exercises.reduce((sum, ex) => {
-                return sum + (parseInt(ex.calories) || 0);
-              }, 0);
+              
 
               const goal = dayWorkout.exercises[0]?.goal || "Workout";
 
@@ -271,7 +126,7 @@ export default function TodayWorkout({
                                 color="#667085"
                               />
                               <Text style={styles.metaText}>
-                                {totalMinutes} mins
+                                {dayWorkout?.exercises[0]?.total_time} mins
                               </Text>
                             </View>
                             <View style={styles.metaItem}>
@@ -281,7 +136,7 @@ export default function TodayWorkout({
                                 color="#667085"
                               />
                               <Text style={styles.metaText}>
-                                {totalCalories} kcal
+                                {dayWorkout?.exercises[0]?.total_cal} kcal
                               </Text>
                             </View>
                           </View>

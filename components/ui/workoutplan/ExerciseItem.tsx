@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Image } from "react-native";
-import axios from "axios";
 import fallbackImage from "../../../assets/images/warmup.gif";
 import { useEffect, useState } from "react";
+import { fetchExerciseImage } from "@/utils/static/helpers/fetchExerciseImage";
 
 export default function ExerciseItem({
   id,
@@ -12,45 +12,13 @@ export default function ExerciseItem({
   length,
 }) {
   const [imageUrl, setImageUrl] = useState(null);
-  const nameExer = name.toLowerCase();
   useEffect(() => {
-    const fetchExercises = async () => {
-      try {
-        if (image === undefined) {
-          const response = await axios.get(
-            `https://exercisedb.p.rapidapi.com/exercises/name/${nameExer}`,
-            {
-              headers: {
-                "x-rapidapi-key":
-                  "7319fe3066msh3ad6b025629ae02p104510jsn19100cc32820",
-                "x-rapidapi-host": "exercisedb.p.rapidapi.com",
-              },
-            }
-          );
-
-          const formattedData = response.data[0].gifUrl;
-          setImageUrl(formattedData);
-        } else {
-          const response = await axios.get(
-            `https://exercisedb.p.rapidapi.com/exercises/exercise/${id}`,
-            {
-              headers: {
-                "x-rapidapi-key":
-                  "7319fe3066msh3ad6b025629ae02p104510jsn19100cc32820",
-                "x-rapidapi-host": "exercisedb.p.rapidapi.com",
-              },
-            }
-          );
-
-          const formattedData = response.data.gifUrl;
-          setImageUrl(formattedData);
-        }
-      } catch (err: any) {
-        console.error("Error fetching exercises:", err.message);
-      }
+    const loadImage = async () => {
+      const url = await fetchExerciseImage(id, name, image);
+      setImageUrl(url);
     };
 
-    fetchExercises();
+    loadImage();
   }, []);
   const hasBottomBorder = index < length - 1;
   return (

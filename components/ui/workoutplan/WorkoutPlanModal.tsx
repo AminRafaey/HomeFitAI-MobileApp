@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,105 +14,61 @@ import WeekProgress from "./WeekProgress";
 import TodayWorkout from "./TodayWorkout";
 import ExerciseDetail from "./ExerciseDetail";
 import useAuth from "@/context/useAuth";
-import { DB } from "@/firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { fetchWorkoutPlanModal } from "@/utils/static/helpers/fetchWorkoutPlanModal";
+import useWeeks from "@/hooks/useWeeks";
+
+const TOTAL_WEEKS = 4;
+const TAB_MONTHLY = "monthly";
+const TAB_TODAY = "today";
 
 export default function WorkoutPlanModal({ onClose }) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("monthly");
+  const [activeTab, setActiveTab] = useState(TAB_MONTHLY);
   const [showExerciseDetail, setShowExerciseDetail] = useState(false);
-  const [selectedWorkout, setSelectedWorkout] = useState(null);
-  const [scheduleDays, setScheduleDays] = useState<string[]>([]);
-  const [time, setTime] = useState(1);
-  const [diffDays, setDiffDays] = useState(0);
+  const [workoutPlan, setWorkoutPlan] = useState({
+    scheduleDays: [],
+    diffDays: 0,
+    time: 1,
+  });
 
   useEffect(() => {
-    const fetchWorkoutPlans = async () => {
-      try {
-        if (!user) return;
-
-        const workoutPlanRef = collection(
-          DB,
-          "users",
-          user.uid,
-          "workoutPlans"
-        );
-        const snapshot = await getDocs(workoutPlanRef);
-
-        let date;
-        const workoutNames = snapshot.docs.map((doc) => {
-          date = doc.data().createdAt;
-          return doc.data().schedule;
+    if (!user?.uid) return;
+    const getWorkoutPlans = async () => {
+      const result = await fetchWorkoutPlanModal(user.uid);
+      if (result) {
+        setWorkoutPlan({
+          scheduleDays: result.scheduleDays,
+          diffDays: result.diffDays,
+          time: result.week,
         });
-
-        if (date) {
-          const milliseconds =
-            date.seconds * 1000 + Math.floor(date.nanoseconds / 1_000_000);
-
-          const startDate = new Date(milliseconds);
-          const today = new Date();
-
-          const diffTime = today.getTime() - startDate.getTime();
-          const calculatedDiffDays = Math.floor(
-            diffTime / (1000 * 60 * 60 * 24)
-          );
-
-          const calculatedWeek = Math.floor(calculatedDiffDays / 7) + 1;
-
-          setTime(calculatedWeek);
-          setDiffDays(calculatedDiffDays);
-          setScheduleDays(workoutNames[0] || []);
-        }
-      } catch (error) {
-        console.error("Error fetching workout plans:", error);
       }
     };
-
-    fetchWorkoutPlans();
+    getWorkoutPlans();
   }, [user]);
 
-  const handleWorkoutPress = (workout) => {
-    setSelectedWorkout(workout);
-    setShowExerciseDetail(true);
-  };
-
-  const handleBackToToday = () => {
+  const handleMonthlyTabPress = () => {
+    setActiveTab(TAB_MONTHLY);
     setShowExerciseDetail(false);
   };
+  const handleTodayTabPress = () => {
+    setActiveTab(TAB_TODAY);
+    setShowExerciseDetail(false);
+  };
+  const handleWorkoutPress = useCallback((workout) => {
+    setShowExerciseDetail(true);
+  }, []);
+  const handleBackToToday = () => setShowExerciseDetail(false);
 
-
-  const totalWeeks = 4;
-
-  const weeks = useMemo(() => {
-    return Array.from({ length: totalWeeks }, (_, i) => {
-      const weekNumber = i + 1;
-      const daysIntoCurrentWeek = diffDays % 7;
-      const activeWeekProgress = Math.min(
-        Math.floor((daysIntoCurrentWeek / 7) * 100),
-        100
-      );
-
-      return {
-        week: weekNumber,
-        progress:
-          weekNumber < time
-            ? 100
-            : weekNumber === time
-            ? activeWeekProgress
-            : 0,
-        active: weekNumber === time,
-        completed: weekNumber < time,
-      };
-    });
-  }, [time, diffDays]);
+  const weeks = useWeeks(workoutPlan);
 
   const currentWeek = weeks.find((w) => w.active)?.week ?? 1;
+  const showMonthly = activeTab === TAB_MONTHLY && !showExerciseDetail;
+  const showToday = activeTab === TAB_TODAY && !showExerciseDetail;
 
   return (
     <View style={styles.modalContainer}>
       <View style={styles.modalContent}>
         <View style={styles.handleBar} />
-
         <View style={styles.header}>
           <Text style={styles.title}>Workout plan</Text>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -124,18 +80,13 @@ export default function WorkoutPlanModal({ onClose }) {
           <TouchableOpacity
             style={[
               styles.tab,
-              activeTab === "monthly" && styles.activeTabContainer,
+              activeTab === TAB_MONTHLY && styles.activeTabContainer,
             ]}
-            onPress={() => {
-              setActiveTab("monthly");
-              setShowExerciseDetail(false);
-            }}
+            onPress={handleMonthlyTabPress}
           >
-            {activeTab === "monthly" ? (
+            {activeTab === TAB_MONTHLY ? (
               <LinearGradient
                 colors={["#ff5b7d", "#ff9057"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
                 style={styles.activeTabGradient}
               >
                 <Text style={styles.activeTabText}>Monthly plan</Text>
@@ -147,18 +98,13 @@ export default function WorkoutPlanModal({ onClose }) {
           <TouchableOpacity
             style={[
               styles.tab,
-              activeTab === "today" && styles.activeTabContainer,
+              activeTab === TAB_TODAY && styles.activeTabContainer,
             ]}
-            onPress={() => {
-              setActiveTab("today");
-              setShowExerciseDetail(false);
-            }}
+            onPress={handleTodayTabPress}
           >
-            {activeTab === "today" ? (
+            {activeTab === TAB_TODAY ? (
               <LinearGradient
                 colors={["#ff5b7d", "#ff9057"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
                 style={styles.activeTabGradient}
               >
                 <Text style={styles.activeTabText}>Today</Text>
@@ -169,15 +115,15 @@ export default function WorkoutPlanModal({ onClose }) {
           </TouchableOpacity>
         </View>
 
-        {activeTab === "monthly" && !showExerciseDetail && (
+        {showMonthly && (
           <ScrollView
             style={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
             {weeks.map(({ week, progress, active, completed }) => (
               <WeekProgress
-                schedule={scheduleDays}
                 key={week}
+                schedule={workoutPlan.scheduleDays}
                 week={week}
                 progress={progress}
                 active={active}
@@ -188,14 +134,12 @@ export default function WorkoutPlanModal({ onClose }) {
           </ScrollView>
         )}
 
-        {activeTab === "today" && !showExerciseDetail && (
+        {showToday && (
           <ExerciseDetail
             setExerciseDetailstate={setShowExerciseDetail}
-            // workout={selectedWorkout}
             onBackPress={handleBackToToday}
           />
         )}
-
         {showExerciseDetail && (
           <TodayWorkout
             setExerciseDetailstate={setShowExerciseDetail}
@@ -212,7 +156,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     paddingHorizontal: 10,
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
   modalContent: {
@@ -239,11 +183,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1D2939",
-  },
+  title: { fontSize: 18, fontWeight: "bold", color: "#1D2939" },
   closeButton: {
     position: "absolute",
     right: 0,
@@ -262,30 +202,19 @@ const styles = StyleSheet.create({
     padding: 1,
     marginBottom: 24,
   },
-  tab: {
-    flex: 1,
-    borderRadius: 100,
-    overflow: "hidden",
-  },
-  activeTabContainer: {
-    borderRadius: 100,
-  },
+  tab: { flex: 1, borderRadius: 100, overflow: "hidden" },
+  activeTabContainer: { borderRadius: 100 },
   activeTabGradient: {
     borderRadius: 100,
     paddingVertical: 12,
     alignItems: "center",
   },
-  activeTabText: {
-    color: "white",
-    fontWeight: "600",
-  },
+  activeTabText: { color: "white", fontWeight: "600" },
   tabText: {
     color: "#344054",
     fontWeight: "600",
     textAlign: "center",
     paddingVertical: 12,
   },
-  scrollContent: {
-    flex: 1,
-  },
+  scrollContent: { flex: 1 },
 });

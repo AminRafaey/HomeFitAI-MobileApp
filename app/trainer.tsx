@@ -8,17 +8,15 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
-  FlatList,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
   ScrollView,
   ImageBackground,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
-import { collection, getDocs } from "firebase/firestore";
 import { router } from "expo-router";
-import { DB } from "@/firebaseConfig";
+import useFetchUsers from "@/hooks/useFetchUsers";
 
 const { width } = Dimensions.get("window");
 const ITEM_WIDTH = width - 2 * 78;
@@ -27,33 +25,17 @@ export default function App() {
   const [currentIndexUser, setCurrentIndexUser] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { users, loading, error } = useFetchUsers();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const querySnapshot = await getDocs(
-          collection(DB, "orientation_agents")
-        );
-        const userList = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setUsers(userList);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, []);
   const currentTrainerUser = users[currentIndexUser];
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  useEffect(() => {
+    if (users?.length > 0) {
+      setCurrentIndexUser(0);
+    }
+  }, [users]);
+
+  const handleScroll = (event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / ITEM_WIDTH);
     if (index !== currentIndexUser && index >= 0 && index < users?.length) {
@@ -61,7 +43,7 @@ export default function App() {
     }
   };
 
-  const scrollToTrainer = (index: number) => {
+  const scrollToTrainer = (index) => {
     if (index >= 0 && index < users?.length) {
       flatListRef.current?.scrollToOffset({
         offset: index * ITEM_WIDTH,
@@ -85,7 +67,23 @@ export default function App() {
         source={require("../assets/images/Splash.jpg")}
         style={styles.loadingBackground}
         resizeMode="cover"
-      ></ImageBackground>
+      >
+        <ActivityIndicator
+          size="large"
+          color="#fff"
+          style={styles.loadingIndicator}
+        />
+      </ImageBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Text style={styles.errorText}>
+          Something went wrong! Please try again later.
+        </Text>
+      </SafeAreaView>
     );
   }
 
@@ -93,14 +91,8 @@ export default function App() {
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(248, 249, 251, 1)",
-            alignItems: "center",
-          }}
-        >
-          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={styles.mainContainer}>
+          <ScrollView contentContainerStyle={styles.scrollViewContainer}>
             <View style={styles.content}>
               <Text style={styles.title}>Choose your trainer</Text>
 
@@ -172,8 +164,8 @@ export default function App() {
                       i < Math.floor(currentTrainerUser?.rating)
                         ? "star"
                         : i < currentTrainerUser?.rating
-                        ? "star-half-o"
-                        : "star-o"
+                          ? "star-half-o"
+                          : "star-o"
                     }
                     size={16}
                     color="black"
@@ -241,20 +233,27 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-
-  loadingOverlay: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    padding: 20,
-    borderRadius: 10,
+  loadingIndicator: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -20 }, { translateY: -20 }],
   },
-
-  loadingText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
+  errorText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "red",
     textAlign: "center",
+    marginTop: 20,
   },
-
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "rgba(248, 249, 251, 1)",
+    alignItems: "center",
+  },
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     backgroundColor: "rgba(248, 249, 251, 1)",
@@ -263,7 +262,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 800,
+    fontWeight: "800",
     fontFamily: "Inter-Bold",
     textAlign: "center",
     marginBottom: 30,

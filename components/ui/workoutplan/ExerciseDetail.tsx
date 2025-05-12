@@ -11,10 +11,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { collection, getDocs, doc } from "firebase/firestore";
 import ExerciseItem from "./ExerciseItem";
-import { DB } from "@/firebaseConfig";
 import useAuth from "@/context/useAuth";
+import { getTodayWorkoutDetails } from "@/utils/static/helpers/getTodayWorkoutDetails";
 
 export default function ExerciseDetail({
   onBackPress,
@@ -22,7 +21,6 @@ export default function ExerciseDetail({
 }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [warmupEnabled, setWarmupEnabled] = useState(true);
   const [cooldownEnabled, setCooldownEnabled] = useState(true);
   const [exerciseDetails, setExerciseDetails] = useState(null);
@@ -30,152 +28,19 @@ export default function ExerciseDetail({
   const exerciseCount = exerciseDetails?.main?.length;
 
   useEffect(() => {
-    const fetchTodayWorkoutDetails = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const userId = user?.uid;
-        if (!userId) throw new Error("User not authenticated");
-
-        const today = new Date();
-        const dayNames = [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-        ];
-        const todayName = dayNames[today.getDay()];
-
-        if (
-          exerciseDetailsRef.current &&
-          exerciseDetailsRef.current.dayName === todayName
-        ) {
-          setExerciseDetails(exerciseDetailsRef.current);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch workout document
-        const workoutDocRef = doc(
-          DB,
-          "users",
-          userId,
-          "workoutPlans",
-          todayName
-        );
-        const exercisesRef = collection(workoutDocRef, "exercises");
-        const exercisesSnapshot = await getDocs(exercisesRef);
-
-        if (exercisesSnapshot.empty) {
-          setExerciseDetails(null);
-          return;
-        }
-
-        const workoutData = (
-          await getDocs(collection(DB, "users", userId, "workoutPlans"))
-        ).docs
-          .find((doc) => doc.id === todayName)
-          ?.data();
-
-        const warmup = workoutData?.warmup || [];
-        const cooldown = workoutData?.cooldown || [];
-        const equipment = workoutData?.equipment || [];
-
-        const exerciseData = {
-          name: `${todayName}'s Workout`,
-          date: today.toDateString(),
-          dayName: todayName,
-          warmup: [],
-          main: [],
-          cooldown: [],
-          equipment,
-        };
-
-        // Warmup
-        warmup.forEach((item, index) =>
-          exerciseData.warmup.push({
-            id: `warmup-${index}`,
-            name: item.name,
-            duration: "01:00",
-            sets: 1,
-            reps: 10,
-            note: "",
-          })
-        );
-
-        // Cooldown
-        cooldown.forEach((item, index) =>
-          exerciseData.cooldown.push({
-            id: `cooldown-${index}`,
-            name: item.name,
-            duration: "01:00",
-            sets: 1,
-            reps: 10,
-            note: "",
-          })
-        );
-
-        // Main exercises
-        exercisesSnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          const sets = data.sets || 3;
-          const reps = data.reps || "8-10";
-
-          let avgReps = 0;
-          if (typeof reps === "string" && reps.includes("-")) {
-            const [min, max] = reps
-              .split("-")
-              .map((num) => Number.parseInt(num, 10));
-            avgReps = (min + max) / 2;
-          } else {
-            avgReps = Number.parseInt(reps, 10) || 8;
-          }
-
-          const secondsPerRep = 3;
-          const restBetweenSets = 30;
-          const totalSeconds =
-            sets * avgReps * secondsPerRep + (sets - 1) * restBetweenSets;
-          const minutes = Math.floor(totalSeconds / 60);
-          const seconds = totalSeconds % 60;
-          const calories = minutes * 8;
-          const duration = `${minutes.toString().padStart(2, "0")}:${seconds
-            .toString()
-            .padStart(2, "0")}`;
-
-          exerciseData.main.push({
-            id: docSnap.id,
-            name: data.name || "Unnamed",
-            duration,
-            sets,
-            reps,
-            note: data.note || "",
-            image: data.image || null,
-            calories: `${calories} kcal`,
-          });
-        });
-        const totalCalories = exerciseData.main
-          .map((item) =>
-            typeof item.calories === "string"
-              ? parseInt(item.calories.replace(" kcal", ""), 10)
-              : item.calories || 0
-          )
-          .reduce((acc, current) => acc + current, 0);
-
-        exerciseData.calories = totalCalories;
-
-        exerciseDetailsRef.current = exerciseData;
-        setExerciseDetails(exerciseData);
+        const details = await getTodayWorkoutDetails(user, exerciseDetailsRef);
+        setExerciseDetails(details);
       } catch (err) {
         console.error("Failed to fetch today's workout:", err);
-        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTodayWorkoutDetails();
+    fetchData();
   }, [user]);
 
   if (loading) {
@@ -192,25 +57,6 @@ export default function ExerciseDetail({
     );
   }
 
-  if (error) {
-    return (
-      <ScrollView
-        style={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Error: {error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => setLoading(true)}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    );
-  }
-
   if (!exerciseDetails) {
     return (
       <ScrollView
@@ -219,13 +65,12 @@ export default function ExerciseDetail({
       >
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            No exercise details found for today PLease check your schedule
+            No exercise details found for today Please check your schedule
           </Text>
         </View>
       </ScrollView>
     );
   }
-
   return (
     <ScrollView
       style={styles.scrollContent}
@@ -265,7 +110,7 @@ export default function ExerciseDetail({
             <Text style={styles.sectionTitle}>Warmup</Text>
             <Text style={styles.sectionDuration}>
               {exerciseDetails.warmup.length > 0
-                ? `${exerciseDetails.warmup.length * 1} mins`
+                ? `${exerciseDetails.warmup[0].duration} mins`
                 : "3 mins"}
             </Text>
           </View>
@@ -287,6 +132,7 @@ export default function ExerciseDetail({
                   key={`warmup-${index}`}
                   name={exercise.name}
                   duration={exercise.duration}
+                  image={exercise.image}
                   length={exerciseDetails.warmup.length}
                 />
               ))
@@ -332,7 +178,7 @@ export default function ExerciseDetail({
             <Text style={styles.sectionTitle}>Cool down</Text>
             <Text style={styles.sectionDuration}>
               {exerciseDetails.cooldown.length > 0
-                ? `${exerciseDetails.cooldown.length * 1} mins`
+                ? `${exerciseDetails.cooldown[0].duration * 1} mins`
                 : "5 mins"}
             </Text>
           </View>
@@ -353,6 +199,7 @@ export default function ExerciseDetail({
                   index={index}
                   key={`cooldown-${index}`}
                   name={exercise.name}
+                  image={exercise.image}
                   duration={exercise.duration}
                   length={exerciseDetails.cooldown.length}
                 />

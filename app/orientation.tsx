@@ -10,19 +10,19 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
-  Modal,
 } from "react-native";
 import ConvAiDOMComponent from "@/components/AI/ConvAiDOMComponent";
 import { BlurView } from "expo-blur";
 import { getCurrentDate } from "@/components/commonFunctions/reuseableFunctions";
 import useAuth from "@/context/useAuth";
+import LogoutModal from "@/components/ui/LogoutModal";
 
 // ==========================================
 
 export default function AICoachingScreen() {
   const { user, logout } = useAuth();
   const flatListRef = useRef<FlatList>(null);
-
+  const messagesRef = useRef([]);
   const [messages, setMessages] = useState<
     { message: string; source: string }[]
   >([]);
@@ -32,17 +32,15 @@ export default function AICoachingScreen() {
     logout();
     setModalVisible(false);
   };
-  const ref = useRef(null);
-  useEffect(() => {
-    ref.current = messages;
-  }, [messages]);
 
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
   useEffect(() => {
     if (flatListRef.current && messages.length > 0) {
       flatListRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
-
   const handleSetMessages = (newMessages: {
     message: string;
     source: string;
@@ -51,8 +49,8 @@ export default function AICoachingScreen() {
       setMessages([]);
       return;
     }
-    ref.current = [...ref.current, newMessages];
-    setMessages([...ref.current]);
+    messagesRef.current = [...messagesRef.current, newMessages];
+    setMessages([...messagesRef.current]);
   };
   return (
     <ImageBackground
@@ -81,38 +79,11 @@ export default function AICoachingScreen() {
                 source={require("./../assets/images/notepad.png")}
               />
             </TouchableOpacity>
-            <Modal
-              transparent
-              animationType="fade"
-              visible={modalVisible}
-              onRequestClose={() => setModalVisible(false)}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Confirm Logout</Text>
-                  <Text style={styles.modalMessage}>
-                    Are you sure you want to logout?
-                  </Text>
-                  <View style={styles.modalActions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.modalButton,
-                        { backgroundColor: "rgba(255, 55, 125, 1)" },
-                      ]}
-                      onPress={handleLogout}
-                    >
-                      <Text style={styles.modalButtonText}>Logout</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.modalButton, { backgroundColor: "#ccc" }]}
-                      onPress={() => setModalVisible(false)}
-                    >
-                      <Text style={styles.modalButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </Modal>
+            <LogoutModal
+              modalVisible={modalVisible}
+              setModalVisible={setModalVisible}
+              onLogout={handleLogout}
+            />
           </View>
         </View>
         <View style={styles.topContentmid}></View>
@@ -235,48 +206,5 @@ const styles = StyleSheet.create({
   messageText: {
     color: "#FFF",
     fontSize: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    width: "80%",
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  modalMessage: {
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  modalButton: {
-    flex: 1,
-    marginHorizontal: 5,
-    paddingVertical: 10,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
   },
 });

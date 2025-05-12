@@ -1,9 +1,8 @@
 "use dom";
 
-import React, { useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useConversation } from "@11labs/react";
 import { AudioLines, Loader, X } from "lucide-react-native";
-import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { requestMicrophonePermission } from "../permissions/askPermission";
@@ -11,7 +10,12 @@ import { cloudFunctions } from "@/firebaseConfig";
 import { httpsCallable } from "@firebase/functions";
 import { router } from "expo-router";
 
-// =========================================================
+// Firestore cloud functions
+const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
+const getUpdatedWorkoutPlan = httpsCallable(
+  cloudFunctions,
+  "geUpdatedWorkoutPlan"
+);
 
 export default function ConvAiDOMComponent({
   username,
@@ -32,43 +36,32 @@ export default function ConvAiDOMComponent({
   const [loading, setLoading] = useState(false);
   const userStoppedRef = useRef(false);
   const conversationIdRef = useRef<string>("");
-  const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
-  const geUpdatedWorkoutPlan = httpsCallable(
-    cloudFunctions,
-    "geUpdatedWorkoutPlan"
-  );
+
+  const handleNavigation = (messageText: string, routeParams: any) => {
+    router.push({
+      pathname: "/loading",
+      params: routeParams,
+    });
+
+    getWorkoutPlan({
+      conversationId: conversationIdRef.current,
+      userId: userId.uid,
+    }).catch((err) => console.error("Workout fetch error:", err));
+  };
 
   const conversation = useConversation({
-    onConnect: () => {
-      setLoading(false);
-    },
+    onConnect: () => setLoading(false),
     onDisconnect: () => {
       const wasUser = userStoppedRef.current;
-      setMessages({ message: `Disconnected`, source: "ai" });
+      setMessages({ message: "Disconnected", source: "ai" });
+
       if (!wasUser && text === "orientation") {
-        router.push({
-          pathname: "/loading",
-          params: {
-            text: "Creating your\nPersonal Plan\nPlease wait...",
-            time: "20000",
-            nextRoute:
-              "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
-          },
+        handleNavigation("Creating your Plan", {
+          text: "Creating your\nPersonal Plan\nPlease wait...",
+          time: "20000",
+          nextRoute:
+            "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
         });
-
-        getWorkoutPlan({
-          conversationId: conversationIdRef.current,
-          userId: userId.uid,
-        })
-          .then((response) => {
-            const data = response.data;
-          })
-          .catch((error) => {
-            console.error("Error fetching workout plan:", error);
-          });
-      }
-
-      if (!wasUser && text === "coaching") {
       } else if (wasUser) {
         alert("Try again");
       }
@@ -79,51 +72,54 @@ export default function ConvAiDOMComponent({
     onMessage: (message) => {
       setMessages({ message: message.message, source: message.source });
     },
-
-    onError: (error) => console.error("Error:", error),
+    onError: (error) => console.error("Conversation error:", error),
   });
+
   const changeWorkoutPlan = async ({ goal, days, intensity }) => {
-    geUpdatedWorkoutPlan({
-      conversationId: conversationIdRef.current,
-      userId: userId.uid,
-      userData: { goal, days, intensity },
-    })
-      .then((response) => {
-        const data = response.data;
-      })
-      .catch((error) => {
-        console.error("Error fetching workout plan:", error);
+    try {
+      await getUpdatedWorkoutPlan({
+        conversationId: conversationIdRef.current,
+        userId: userId.uid,
+        userData: { goal, days, intensity },
       });
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    await conversation.endSession();
-    router.push({
-      pathname: "/loading",
-      params: {
-        text: "Updating your\nPersonal Plan\nPlease wait...",
-        time: "20000",
-        nextRoute:
-          "/success?title=Your%20Plan%20Has%20Been%20Updated&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
-      },
-    });
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await conversation.endSession();
 
-    return "Workout updated and session ended.";
+      router.push({
+        pathname: "/loading",
+        params: {
+          text: "Updating your\nPersonal Plan\nPlease wait...",
+          time: "20000",
+          nextRoute:
+            "/success?title=Your%20Plan%20Has%20Been%20Updated&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
+        },
+      });
+
+      return "Workout updated and session ended.";
+    } catch (error) {
+      console.error("Error updating workout plan:", error);
+    }
   };
+
   const startConversation = useCallback(async () => {
     setLoading(true);
+
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) {
+      alert("No permission");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const hasPermission = await requestMicrophonePermission();
-      if (!hasPermission) {
-        alert("No permission");
-        return;
-      }
-      const con = await conversation.startSession({
-        agentId: agentId,
+      await conversation.startSession({
+        agentId,
         dynamicVariables: {
-          username: username ? username : "",
-          conversation: userData ? userData.conversation : "",
-          workoutplan: userData ? userData.plan : "",
-          history: userData ? userData.history : "",
+          username: username || "",
+          conversation: userData?.conversation || "",
+          workoutplan: userData?.plan || "",
+          history: userData?.history || "",
         },
         clientTools: { changeWorkoutPlan },
       });
@@ -132,7 +128,7 @@ export default function ConvAiDOMComponent({
       if (sessionID) {
         conversationIdRef.current = sessionID;
       } else {
-        console.error("Failed to retrieve session ID");
+        console.error("No session ID received");
       }
     } catch (error) {
       console.error("Failed to start conversation:", error);
@@ -150,6 +146,31 @@ export default function ConvAiDOMComponent({
     : conversation.status === "disconnected"
       ? `Start ${text}`
       : `End ${text}`;
+
+  const gradientColors = loading
+    ? ["#333", "#999"]
+    : conversation.status === "connected"
+      ? ["#fff", "#fff"]
+      : ["#FF377F", "#FF8D51"];
+
+  const buttonTextColor = loading
+    ? "#ddd"
+    : conversation.status === "connected"
+      ? "#FF8D52"
+      : "#fff";
+
+  const icon = loading ? (
+    <Loader size={28} color="white" style={styles.buttonIcon} />
+  ) : conversation.status === "connected" ? (
+    <X size={28} color="#FF8D51" style={styles.buttonIcon} />
+  ) : (
+    <AudioLines
+      size={28}
+      color={loading ? "#ccc" : "#E2E8F0"}
+      style={[styles.buttonIcon, loading && { opacity: 0.5 }]}
+    />
+  );
+
   return (
     <Pressable
       style={[
@@ -166,46 +187,13 @@ export default function ConvAiDOMComponent({
       <LinearGradient
         style={[
           styles.buttonInner,
-          conversation.status === "connected" && styles.buttonInnerActive,
           conversation.status === "connected" && styles.buttonInnerEnd,
           loading && styles.buttonInnerLoading,
         ]}
-        colors={
-          loading
-            ? ["#333", "#999"]
-            : conversation.status === "connected"
-              ? ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]
-              : ["rgba(255, 55, 127, 1)", "rgba(255, 141, 81, 1)"]
-        }
+        colors={gradientColors as [string, string, ...string[]]}
       >
-        {loading ? (
-          <Loader size={28} color="white" style={styles.buttonIcon} />
-        ) : conversation.status === "connected" ? (
-          <X
-            size={28}
-            color="rgba(255, 141, 81, 1)"
-            style={styles.buttonIcon}
-          />
-        ) : (
-          <AudioLines
-            size={28}
-            color={loading ? "#ccc" : "#E2E8F0"}
-            style={[styles.buttonIcon, loading && { opacity: 0.5 }]}
-          />
-        )}
-
-        <Text
-          style={[
-            styles.textStyle,
-            loading
-              ? { color: "#ddd" }
-              : conversation.status === "connected"
-                ? {
-                    color: "rgba(255,141,82,1)",
-                  }
-                : { color: "#fff" },
-          ]}
-        >
+        {icon}
+        <Text style={[styles.textStyle, { color: buttonTextColor }]}>
           {buttonText}
         </Text>
       </LinearGradient>
@@ -215,7 +203,6 @@ export default function ConvAiDOMComponent({
 
 const styles = StyleSheet.create({
   textStyle: {
-    color: "white",
     fontSize: 16,
   },
   callButton: {
@@ -239,28 +226,14 @@ const styles = StyleSheet.create({
     boxShadow: "0px 2.78px 0px 0px rgba(160, 69, 21, 1)",
   },
   buttonInnerEnd: {
-    flexDirection: "row",
-    width: "100%",
-    height: 60,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0px 2.78px 0px 0px rgba(160, 69, 21, 1)",
     borderWidth: 2,
-    borderColor: "rgba(255, 141, 81, 1)",
-  },
-
-  buttonInnerActive: {
-    backgroundColor: "#EF4444",
-    shadowColor: "#EF4444",
-    borderWidth: 2,
-    borderColor: "rgba(255,141,82,1)",
-  },
-  buttonIcon: {
-    marginRight: 8,
+    borderColor: "#FF8D51",
   },
   buttonInnerLoading: {
     backgroundColor: "#666",
     shadowColor: "transparent",
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
 });
