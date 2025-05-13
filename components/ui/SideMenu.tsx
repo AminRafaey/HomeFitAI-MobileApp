@@ -6,8 +6,11 @@ import {
 } from "@expo/vector-icons";
 import { useState } from "react";
 import WorkoutPlanModal from "./workoutplan/WorkoutPlanModal";
+import { resetUserOrientation } from "@/utils/static/helpers/deleteUserData";
+import useAuth from "@/context/useAuth";
 
 const SideMenu = () => {
+  const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   return (
     <View style={styles.container}>
@@ -21,6 +24,7 @@ const SideMenu = () => {
 
       <TouchableOpacity
         style={[styles.menuButton, { backgroundColor: "#8091FF" }]}
+        // onPress={() => resetUserOrientation(user)}
       >
         <View style={[styles.iconInner, { backgroundColor: "white" }]}>
           <MaterialIcons name="leaderboard" size={24} color="#4169E1" />

@@ -30,7 +30,7 @@ export default function TodayWorkout({
   useEffect(() => {
     const loadWorkout = async () => {
       try {
-        const data = await fetchTodayWorkoutDetails(user.uid);
+        const data = await fetchTodayWorkoutDetails(user?.uid);
         setWorkouts(data);
       } catch (error) {
         console.error("Failed to fetch workout details:", error);

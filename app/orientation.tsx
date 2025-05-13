@@ -10,17 +10,25 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import ConvAiDOMComponent from "@/components/AI/ConvAiDOMComponent";
 import { BlurView } from "expo-blur";
 import { getCurrentDate } from "@/components/commonFunctions/reuseableFunctions";
 import useAuth from "@/context/useAuth";
 import LogoutModal from "@/components/ui/LogoutModal";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { httpsCallable } from "@firebase/functions";
+import { cloudFunctions } from "@/firebaseConfig";
+import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 // ==========================================
 
+const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
 export default function AICoachingScreen() {
   const { user, logout } = useAuth();
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const messagesRef = useRef([]);
   const [messages, setMessages] = useState<
@@ -28,6 +36,17 @@ export default function AICoachingScreen() {
   >([]);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const handleNavigation = async (messageText: string, routeParams: any) => {
+    router.push({
+      pathname: "/loading",
+      params: routeParams,
+    });
+
+    await getWorkoutPlan({
+      conversationId: "JDekkMJixJ7HDNu52qKL",
+      userId: user?.uid,
+    }).catch((err) => console.error("Workout fetch error:", err));
+  };
   const handleLogout = async () => {
     logout();
     setModalVisible(false);
@@ -52,11 +71,27 @@ export default function AICoachingScreen() {
     messagesRef.current = [...messagesRef.current, newMessages];
     setMessages([...messagesRef.current]);
   };
+  const handleWorkoutCreation = () => {
+    handleNavigation("Creating your Plan", {
+      text: "Creating your\nPersonal Plan\nPlease wait...",
+      time: "40000",
+      nextRoute:
+        "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
+    });
+  };
   return (
     <ImageBackground
       source={require("./../assets/images/image.png")}
       style={styles.container}
     >
+      <ConfirmationModal
+        visible={confirmModalVisible}
+        onConfirm={() => {
+          setConfirmModalVisible(false);
+          handleWorkoutCreation();
+        }}
+        onCancel={() => setConfirmModalVisible(false)}
+      />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.topContent}>
           <Text style={styles.dateText}>{getCurrentDate()}</Text>
@@ -79,12 +114,25 @@ export default function AICoachingScreen() {
                 source={require("./../assets/images/notepad.png")}
               />
             </TouchableOpacity>
+
             <LogoutModal
               modalVisible={modalVisible}
               setModalVisible={setModalVisible}
               onLogout={handleLogout}
             />
           </View>
+          <TouchableOpacity
+            style={[styles.menuButton, { backgroundColor: "#8091FF" }]}
+            onPress={() => setConfirmModalVisible(true)}
+          >
+            <View style={[styles.iconInner, { backgroundColor: "white" }]}>
+              <MaterialCommunityIcons
+                name="electron-framework"
+                size={24}
+                color="#4169E1"
+              />
+            </View>
+          </TouchableOpacity>
         </View>
         <View style={styles.topContentmid}></View>
         <View style={styles.topContentLower}>
@@ -206,5 +254,29 @@ const styles = StyleSheet.create({
   messageText: {
     color: "#FFF",
     fontSize: 14,
+  },
+  menuButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 12,
+    backgroundColor: "#FFA500",
+    shadowColor: "#FFA500",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 10,
+  },
+
+  iconInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.5)",
   },
 });

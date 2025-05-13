@@ -10,6 +10,9 @@ export const fetchWorkoutPlans = async (
   let success = false;
   let userData = null;
   let userName = "";
+  if (!userId) {
+    console.warn("userId not available yet.");
+  }
 
   while (!success) {
     try {
@@ -37,7 +40,9 @@ export const fetchWorkoutPlans = async (
         await new Promise((res) => setTimeout(res, 3000));
       }
     } catch (error) {
-      console.error("Error fetching workout plan:", error);
+      // console.error("Error fetching workout plan:", error);
+      console.error("Message:", error.message);
+      console.error("Code:", error.code);
       await new Promise((res) => setTimeout(res, 3000));
     }
   }

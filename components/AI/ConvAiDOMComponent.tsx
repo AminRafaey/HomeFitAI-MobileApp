@@ -58,7 +58,7 @@ export default function ConvAiDOMComponent({
       if (!wasUser && text === "orientation") {
         handleNavigation("Creating your Plan", {
           text: "Creating your\nPersonal Plan\nPlease wait...",
-          time: "20000",
+          time: "40000",
           nextRoute:
             "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
         });
@@ -90,7 +90,7 @@ export default function ConvAiDOMComponent({
         pathname: "/loading",
         params: {
           text: "Updating your\nPersonal Plan\nPlease wait...",
-          time: "20000",
+          time: "30000",
           nextRoute:
             "/success?title=Your%20Plan%20Has%20Been%20Updated&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
         },

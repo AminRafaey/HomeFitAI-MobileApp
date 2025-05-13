@@ -3,13 +3,42 @@ import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native";
 import { router } from "expo-router";
 import SuccessMessage from "@/components/ui/SuccessMessage";
+import useAuth from "@/context/useAuth";
+import { fetchWorkoutPlans } from "@/utils/static/helpers/fetchWorkoutPlans";
+import { useState } from "react";
+import { httpsCallable } from "@firebase/functions";
+import { cloudFunctions } from "@/firebaseConfig";
 
 export default function SuccessScreen() {
   const { title, subtitle, action } = useLocalSearchParams();
+  const [loading, setLoading] = useState(false);
+  const getAgentData = httpsCallable(cloudFunctions, "getAgentData");
+  const { user } = useAuth();
 
-  const handleAction = () => {
-    const path = `/${action}`;
-    router.push(path as any);
+  const fetchPlans = async () => {
+    const { userData, userName } = await fetchWorkoutPlans(
+      user?.uid,
+      getAgentData
+    );
+    return { userData, userName };
+  };
+
+  const handleAction = async () => {
+    try {
+      setLoading(true);
+
+      const { userData, userName } = await fetchPlans();
+
+      const path = `/${action}?userdata=${encodeURIComponent(
+        JSON.stringify(userData)
+      )}&username=${encodeURIComponent(userName)}`;
+
+      router.push(path as any);
+    } catch (error) {
+      console.error("Error fetching workout plan or navigating:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -21,6 +50,7 @@ export default function SuccessScreen() {
           "Your personalized plan is ready. Start your journey to success today!"
         }
         onPress={handleAction}
+        loading={loading}
       />
     </SafeAreaView>
   );

@@ -34,7 +34,7 @@ export default function WorkoutPlanModal({ onClose }) {
   useEffect(() => {
     if (!user?.uid) return;
     const getWorkoutPlans = async () => {
-      const result = await fetchWorkoutPlanModal(user.uid);
+      const result = await fetchWorkoutPlanModal(user?.uid);
       if (result) {
         setWorkoutPlan({
           scheduleDays: result.scheduleDays,

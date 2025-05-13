@@ -18,38 +18,35 @@ import { cloudFunctions } from "@/firebaseConfig";
 import useAuth from "@/context/useAuth";
 import { httpsCallable } from "@firebase/functions";
 import { fetchWorkoutPlans } from "@/utils/static/helpers/fetchWorkoutPlans";
+import { useLocalSearchParams } from "expo-router";
 export default function App() {
   const { user } = useAuth();
+  const userID = user?.uid;
+
   const messagesRef = useRef([]);
   const flatListRef = useRef<FlatList>(null);
-  const getAgentData = httpsCallable(cloudFunctions, "getAgentData");
-  const [userData, setUserData] = useState<any>(null);
   const [messages, setMessages] = useState<
     { message: string; source: string }[]
   >([]);
+  const { userdata, username } = useLocalSearchParams();
+
+  const getAgentData = httpsCallable(cloudFunctions, "getAgentData");
+  const [userData, setUserData] = useState<any>(null);
   const [userName, setUserName] = useState<string>("");
   useEffect(() => {
     if (!user) return;
 
-    let isCancelled = false;
-
     const fetchPlans = async () => {
       const { userData, userName } = await fetchWorkoutPlans(
-        user.uid,
+        userID,
         getAgentData
       );
 
-      if (!isCancelled) {
-        setUserData(userData);
-        setUserName(userName);
-      }
+      setUserData(userData);
+      setUserName(userName);
     };
 
     fetchPlans();
-
-    return () => {
-      isCancelled = true;
-    };
   }, [user]);
 
   useEffect(() => {
@@ -103,17 +100,17 @@ export default function App() {
               />
             </BlurView>
           </View>
-          {userData && (
-            <ConvAiDOMComponent
-              setMessages={handleSetMessages}
-              dom={{ style: styles.domComponent }}
-              username={userName}
-              userId={user}
-              text="coaching"
-              agentId="oZReChF9Hmm27DtIsGtG"
-              userData={userData}
-            />
-          )}
+          {/* {userdata && ( */}
+          <ConvAiDOMComponent
+            setMessages={handleSetMessages}
+            dom={{ style: styles.domComponent }}
+            username={userName ? userName : username}
+            userId={user}
+            text="coaching"
+            agentId="oZReChF9Hmm27DtIsGtG"
+            userData={userData ? userData : userdata}
+          />
+          {/* )} */}
         </View>
       </ImageBackground>
     </SafeAreaView>

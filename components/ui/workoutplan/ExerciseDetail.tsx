@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import ExerciseItem from "./ExerciseItem";
 import useAuth from "@/context/useAuth";
 import { getTodayWorkoutDetails } from "@/utils/static/helpers/getTodayWorkoutDetails";
+import { sumDurations } from "@/utils/static/tools";
 
 export default function ExerciseDetail({
   onBackPress,
@@ -42,6 +43,16 @@ export default function ExerciseDetail({
 
     fetchData();
   }, [user]);
+
+  const durationsMain = exerciseDetails?.main?.map((item) => item.duration);
+  const durationsCoolDown = exerciseDetails?.cooldown?.map(
+    (item) => item.duration
+  );
+  const durationsWarmup = exerciseDetails?.warmup?.map((item) => item.duration);
+
+  const totaltimeMain = sumDurations(durationsMain);
+  const totaltimeCooldown = sumDurations(durationsCoolDown);
+  const totaltimeWarmUp = sumDurations(durationsWarmup);
 
   if (loading) {
     return (
@@ -110,7 +121,7 @@ export default function ExerciseDetail({
             <Text style={styles.sectionTitle}>Warmup</Text>
             <Text style={styles.sectionDuration}>
               {exerciseDetails.warmup.length > 0
-                ? `${exerciseDetails.warmup[0].duration} mins`
+                ? `${totaltimeWarmUp} mins`
                 : "3 mins"}
             </Text>
           </View>
@@ -149,7 +160,7 @@ export default function ExerciseDetail({
           <Text style={styles.sectionTitle}>Muscle Building </Text>
           <Text style={styles.sectionDuration}>
             {exerciseDetails.main.length > 0
-              ? `${exerciseDetails.main.length * 2} mins`
+              ? `${totaltimeMain} mins`
               : "0 mins"}
           </Text>
         </View>
@@ -178,7 +189,7 @@ export default function ExerciseDetail({
             <Text style={styles.sectionTitle}>Cool down</Text>
             <Text style={styles.sectionDuration}>
               {exerciseDetails.cooldown.length > 0
-                ? `${exerciseDetails.cooldown[0].duration * 1} mins`
+                ? `${totaltimeCooldown} mins`
                 : "5 mins"}
             </Text>
           </View>

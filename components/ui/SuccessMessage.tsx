@@ -7,6 +7,7 @@ import {
   Animated,
   Easing,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,7 +16,7 @@ import { useEffect, useRef } from "react";
 
 const { width } = Dimensions.get("window");
 
-export default function SuccessMessage({ title, subtitle, onPress }) {
+export default function SuccessMessage({ title, subtitle, onPress, loading }) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const textOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -99,8 +100,16 @@ export default function SuccessMessage({ title, subtitle, onPress }) {
             },
           ]}
         >
-          <TouchableOpacity style={styles.continueButton} onPress={onPress}>
-            <Text style={styles.continueButtonText}>See your Plan</Text>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={onPress}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.continueButtonText}>See your Plan</Text>
+            )}
             <Feather
               name="arrow-right"
               size={20}
