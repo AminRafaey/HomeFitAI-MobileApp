@@ -1,7 +1,5 @@
-"use client";
-import { useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native";
-import { router } from "expo-router";
+import { Alert, SafeAreaView } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import SuccessMessage from "@/components/ui/SuccessMessage";
 import useAuth from "@/context/useAuth";
 import { fetchWorkoutPlans } from "@/utils/static/helpers/fetchWorkoutPlans";
@@ -15,19 +13,22 @@ export default function SuccessScreen() {
   const getAgentData = httpsCallable(cloudFunctions, "getAgentData");
   const { user } = useAuth();
 
-  const fetchPlans = async () => {
-    const { userData, userName } = await fetchWorkoutPlans(
-      user?.uid,
-      getAgentData
-    );
-    return { userData, userName };
-  };
-
   const handleAction = async () => {
     try {
       setLoading(true);
+      const { userData, userName } = await fetchWorkoutPlans(
+        user?.uid,
+        getAgentData
+      );
 
-      const { userData, userName } = await fetchPlans();
+      if (!userData) {
+        Alert.alert(
+          "Something went wrong",
+          "Please try again after some time.",
+          [{ text: "OK" }]
+        );
+        router.push("/orientation");
+      }
 
       const path = `/${action}?userdata=${encodeURIComponent(
         JSON.stringify(userData)
@@ -35,7 +36,8 @@ export default function SuccessScreen() {
 
       router.push(path as any);
     } catch (error) {
-      console.error("Error fetching workout plan or navigating:", error);
+      console.error("Unexpected error:", error);
+      Alert.alert("Unexpected Error", "Please try again later.");
     } finally {
       setLoading(false);
     }

@@ -11,7 +11,6 @@ import { httpsCallable } from "@firebase/functions";
 import { router } from "expo-router";
 
 // Firestore cloud functions
-const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
 const getUpdatedWorkoutPlan = httpsCallable(
   cloudFunctions,
   "geUpdatedWorkoutPlan"
@@ -24,6 +23,8 @@ export default function ConvAiDOMComponent({
   text,
   agentId,
   userData,
+  conversationIdRef,
+  onConversationIdReady,
 }: {
   dom?: import("expo/dom").DOMProps;
   username: string;
@@ -32,47 +33,41 @@ export default function ConvAiDOMComponent({
   agentId: string;
   userData?: any;
   setMessages: (newMessages: { message: string; source: string }) => void;
+  conversationIdRef: React.MutableRefObject<string>;
+  onConversationIdReady?: (id: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const userStoppedRef = useRef(false);
-  const conversationIdRef = useRef<string>("");
-
-  const handleNavigation = (messageText: string, routeParams: any) => {
-    router.push({
-      pathname: "/loading",
-      params: routeParams,
-    });
-
-    getWorkoutPlan({
-      conversationId: conversationIdRef.current,
-      userId: userId.uid,
-    }).catch((err) => console.error("Workout fetch error:", err));
-  };
 
   const conversation = useConversation({
-    onConnect: () => setLoading(false),
+    onConnect: () => {
+      setLoading(false);
+    },
     onDisconnect: () => {
       const wasUser = userStoppedRef.current;
       setMessages({ message: "Disconnected", source: "ai" });
-
       if (!wasUser && text === "orientation") {
-        handleNavigation("Creating your Plan", {
-          text: "Creating your\nPersonal Plan\nPlease wait...",
-          time: "40000",
-          nextRoute:
-            "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
-        });
+        setMessages({ message: "Disconnected", source: "me" });
       } else if (wasUser) {
-        alert("Try again");
+        alert("Something went wrong please try again");
       }
 
       userStoppedRef.current = false;
       conversationIdRef.current = "";
     },
     onMessage: (message) => {
+     if( message.message.includes(
+        "Alright, I’ve got your intel! Hang tight while I whip up your personalized workout plan. Catch you soon, champ! 💪"
+      )){
+
+setTimeout(() => {
+    conversation.endSession();
+  }, 5000);       }
       setMessages({ message: message.message, source: message.source });
     },
-    onError: (error) => console.error("Conversation error:", error),
+    onError: (error) => {
+      console.error("Conversation error:", error);
+    },
   });
 
   const changeWorkoutPlan = async ({ goal, days, intensity }) => {
@@ -127,6 +122,9 @@ export default function ConvAiDOMComponent({
       const sessionID = conversation.getId();
       if (sessionID) {
         conversationIdRef.current = sessionID;
+        if (onConversationIdReady) {
+          onConversationIdReady(sessionID);
+        }
       } else {
         console.error("No session ID received");
       }

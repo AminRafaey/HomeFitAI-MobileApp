@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Text,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import TopNavigation from "@/components/ui/TopNavigation";
@@ -19,23 +20,22 @@ import useAuth from "@/context/useAuth";
 import { httpsCallable } from "@firebase/functions";
 import { fetchWorkoutPlans } from "@/utils/static/helpers/fetchWorkoutPlans";
 import { useLocalSearchParams } from "expo-router";
-export default function App() {
-  const { user } = useAuth();
+export default function Coaching() {
+  const { user, initializing } = useAuth();
   const userID = user?.uid;
-
+  const conversationIdRef = useRef<string>("");
   const messagesRef = useRef([]);
   const flatListRef = useRef<FlatList>(null);
   const [messages, setMessages] = useState<
     { message: string; source: string }[]
   >([]);
   const { userdata, username } = useLocalSearchParams();
-
   const getAgentData = httpsCallable(cloudFunctions, "getAgentData");
   const [userData, setUserData] = useState<any>(null);
   const [userName, setUserName] = useState<string>("");
+
   useEffect(() => {
     if (!user) return;
-
     const fetchPlans = async () => {
       const { userData, userName } = await fetchWorkoutPlans(
         userID,
@@ -49,6 +49,10 @@ export default function App() {
     fetchPlans();
   }, [user]);
 
+  const handleConversationIdReady = (id: string) => {
+    conversationIdRef.current = id;
+  };
+
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
@@ -61,13 +65,29 @@ export default function App() {
     message: string;
     source: string;
   }) => {
-    if (newMessages.message === "Disconnected") {
+    if (newMessages.message === "Disconnected" && messages.length < 3) {
+      alert("Something went wrong please try again");
+    }
+    if (newMessages.message === "Disconnected" && newMessages.source === "ai") {
       setMessages([]);
       return;
     }
     messagesRef.current = [...messagesRef.current, newMessages];
     setMessages([...messagesRef.current]);
   };
+
+  if (initializing) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#FF377F" />
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -100,7 +120,6 @@ export default function App() {
               />
             </BlurView>
           </View>
-          {/* {userdata && ( */}
           <ConvAiDOMComponent
             setMessages={handleSetMessages}
             dom={{ style: styles.domComponent }}
@@ -109,8 +128,9 @@ export default function App() {
             text="coaching"
             agentId="oZReChF9Hmm27DtIsGtG"
             userData={userData ? userData : userdata}
+            conversationIdRef={conversationIdRef}
+            onConversationIdReady={handleConversationIdReady}
           />
-          {/* )} */}
         </View>
       </ImageBackground>
     </SafeAreaView>

@@ -21,10 +21,22 @@ import { Feather } from "@expo/vector-icons";
 import useAuth from "@/context/useAuth";
 
 export default function LoginScreen() {
-  const { login, register, loading, signupLoading } = useAuth();
+  const { login, register, loading, signupLoading, initializing } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  if (initializing) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#FF377F" />
+      </SafeAreaView>
+    );
+  }
 
   const handleLogin = () => {
     if (!email || !password) {

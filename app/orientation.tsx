@@ -11,6 +11,7 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import ConvAiDOMComponent from "@/components/AI/ConvAiDOMComponent";
 import { BlurView } from "expo-blur";
@@ -27,16 +28,37 @@ import ConfirmationModal from "@/components/ui/ConfirmationModal";
 
 const getWorkoutPlan = httpsCallable(cloudFunctions, "getWorkoutPlan");
 export default function AICoachingScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, initializing } = useAuth();
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const conversationIdRef = useRef<string>("");
   const messagesRef = useRef([]);
   const [messages, setMessages] = useState<
     { message: string; source: string }[]
   >([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const handleNavigation = async (messageText: string, routeParams: any) => {
+  if (initializing) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#FF377F" />
+      </SafeAreaView>
+    );
+  }
+
+  const handleConversationIdReady = (id: string) => {
+    conversationIdRef.current = id;
+  };
+
+  const handleNavigationDummy = async (
+    messageText: string,
+    routeParams: any
+  ) => {
     router.push({
       pathname: "/loading",
       params: routeParams,
@@ -44,6 +66,17 @@ export default function AICoachingScreen() {
 
     await getWorkoutPlan({
       conversationId: "JDekkMJixJ7HDNu52qKL",
+      userId: user?.uid,
+    }).catch((err) => console.error("Workout fetch error:", err));
+  };
+
+  const handleNavigation = (messageText: string, routeParams: any) => {
+    router.push({
+      pathname: "/loading",
+      params: routeParams,
+    });
+    getWorkoutPlan({
+      conversationId: conversationIdRef.current,
       userId: user?.uid,
     }).catch((err) => console.error("Workout fetch error:", err));
   };
@@ -64,6 +97,24 @@ export default function AICoachingScreen() {
     message: string;
     source: string;
   }) => {
+    if (
+      newMessages.message.includes(
+        "Alright, I’ve got your intel! Hang tight while I whip up your personalized workout plan. Catch you soon, champ! 💪"
+      )
+    ) {
+      setTimeout(() => {
+        handleNavigation("Creating your Plan", {
+          text: "Creating your\nPersonal Plan\nPlease wait...",
+          time: "40000",
+          nextRoute:
+            "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
+        });
+      }, 5000);
+    }
+
+    if (newMessages.message === "Disconnected" && messages.length < 6) {
+      alert("Something went wrong please try again");
+    }
     if (newMessages.message === "Disconnected") {
       setMessages([]);
       return;
@@ -72,7 +123,7 @@ export default function AICoachingScreen() {
     setMessages([...messagesRef.current]);
   };
   const handleWorkoutCreation = () => {
-    handleNavigation("Creating your Plan", {
+    handleNavigationDummy("Creating your Plan", {
       text: "Creating your\nPersonal Plan\nPlease wait...",
       time: "40000",
       nextRoute:
@@ -166,6 +217,8 @@ export default function AICoachingScreen() {
               userId={user}
               text="orientation"
               agentId="qLyIzcdsyTfk1c61Nd2U"
+              conversationIdRef={conversationIdRef}
+              onConversationIdReady={handleConversationIdReady}
             />
           </View>
         </View>
