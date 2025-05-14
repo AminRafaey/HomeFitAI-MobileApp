@@ -25,18 +25,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  if (initializing) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <ActivityIndicator size="large" color="#FF377F" />
-      </SafeAreaView>
-    );
-  }
 
   const handleLogin = () => {
     if (!email || !password) {

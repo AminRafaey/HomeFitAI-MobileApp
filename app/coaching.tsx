@@ -16,10 +16,11 @@ import SideMenu from "@/components/ui/SideMenu";
 import ConvAiDOMComponent from "@/components/AI/ConvAiDOMComponent";
 import { BlurView } from "expo-blur";
 import { cloudFunctions } from "@/firebaseConfig";
-import useAuth from "@/context/useAuth";
 import { httpsCallable } from "@firebase/functions";
 import { fetchWorkoutPlans } from "@/utils/static/helpers/fetchWorkoutPlans";
 import { useLocalSearchParams } from "expo-router";
+import useAuth from "@/context/useAuth";
+
 export default function Coaching() {
   const { user, initializing } = useAuth();
   const userID = user?.uid;
@@ -76,18 +77,6 @@ export default function Coaching() {
     setMessages([...messagesRef.current]);
   };
 
-  if (initializing) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <ActivityIndicator size="large" color="#FF377F" />
-      </SafeAreaView>
-    );
-  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />

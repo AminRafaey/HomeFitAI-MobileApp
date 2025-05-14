@@ -38,19 +38,6 @@ export default function AICoachingScreen() {
   >([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  if (initializing) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <ActivityIndicator size="large" color="#FF377F" />
-      </SafeAreaView>
-    );
-  }
-
   const handleConversationIdReady = (id: string) => {
     conversationIdRef.current = id;
   };
