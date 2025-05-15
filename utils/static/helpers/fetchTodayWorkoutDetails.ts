@@ -28,9 +28,7 @@ const monthNames = [
 
 export default async function fetchTodayWorkoutDetails(userId) {
   if (!userId) throw new Error("User not authenticated");
-  if (workoutCache.userId === userId && workoutCache.data) {
-    return workoutCache.data;
-  }
+
   const workoutPlansRef = collection(doc(DB, "users", userId), "workoutPlans");
   const plansSnapshot = await getDocs(workoutPlansRef);
   if (plansSnapshot.empty) return [];
@@ -49,8 +47,18 @@ export default async function fetchTodayWorkoutDetails(userId) {
     return date.toISOString().split("T")[0]; // YYYY-MM-DD
   };
 
-  const latestDate = toDateString(allDayDocs[0]?.data.createdAt?.seconds);
+  const latestCreatedAt = allDayDocs[0]?.data.createdAt?.seconds;
 
+  // if (
+  //   workoutCache.userId === userId &&
+  //   workoutCache.data &&
+  //   workoutCache.lastFetchedAt >= latestCreatedAt
+  // ) {
+  //   console.log("Using cached workout data");
+  //   return workoutCache.data;
+  // }
+
+  const latestDate = toDateString(latestCreatedAt);
   const latestPlanDocs = allDayDocs.filter((doc) => {
     const docDate = toDateString(doc.data.createdAt?.seconds);
     return docDate === latestDate;
@@ -126,7 +134,11 @@ export default async function fetchTodayWorkoutDetails(userId) {
   }
 
   workoutDays.sort((a, b) => a.timestamp - b.timestamp);
+
+  // ✅ Update the cache with timestamp of latest plan
   workoutCache.data = workoutDays;
   workoutCache.userId = userId;
+  workoutCache.lastFetchedAt = latestCreatedAt;
+
   return workoutDays;
 }

@@ -17,11 +17,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import useFetchUsers from "@/hooks/useFetchUsers";
+import useAuth from "@/context/useAuth";
 
 const { width } = Dimensions.get("window");
 const ITEM_WIDTH = width - 2 * 78;
 
 export default function App() {
+  const { initializing } = useAuth();
   const [currentIndexUser, setCurrentIndexUser] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -62,6 +64,21 @@ export default function App() {
   };
 
   if (loading) {
+    return (
+      <ImageBackground
+        source={require("../assets/images/Splash.jpg")}
+        style={styles.loadingBackground}
+        resizeMode="cover"
+      >
+        <ActivityIndicator
+          size="large"
+          color="#fff"
+          style={styles.loadingIndicator}
+        />
+      </ImageBackground>
+    );
+  }
+  if (initializing) {
     return (
       <ImageBackground
         source={require("../assets/images/Splash.jpg")}

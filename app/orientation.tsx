@@ -38,19 +38,6 @@ export default function AICoachingScreen() {
   >([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  if (initializing) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <ActivityIndicator size="large" color="#FF377F" />
-      </SafeAreaView>
-    );
-  }
-
   const handleConversationIdReady = (id: string) => {
     conversationIdRef.current = id;
   };
@@ -109,10 +96,13 @@ export default function AICoachingScreen() {
           nextRoute:
             "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
         });
-      }, 5000);
+      }, 10000);
     }
-
-    if (newMessages.message === "Disconnected" && messages.length < 6) {
+    if (
+      newMessages.message === "Disconnected" &&
+      messages.length < 6 &&
+      newMessages.source === "me"
+    ) {
       alert("Something went wrong please try again");
     }
     if (newMessages.message === "Disconnected") {
@@ -130,6 +120,22 @@ export default function AICoachingScreen() {
         "/success?title=Your%20Plan%20Has%20Been%20Created&subtitle=Your%20personalized%20plan%20is%20ready.%20Start%20your%20journey%20to%20success%20today!&action=coaching",
     });
   };
+
+  if (initializing) {
+    return (
+      <ImageBackground
+        source={require("../assets/images/Splash.jpg")}
+        style={styles.loadingBackground}
+        resizeMode="cover"
+      >
+        <ActivityIndicator
+          size="large"
+          color="#fff"
+          style={styles.loadingIndicator}
+        />
+      </ImageBackground>
+    );
+  }
   return (
     <ImageBackground
       source={require("./../assets/images/image.png")}
@@ -229,6 +235,19 @@ export default function AICoachingScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingBackground: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+  },
+  loadingIndicator: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+  },
   container: {
     flex: 1,
     justifyContent: "center",

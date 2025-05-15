@@ -48,21 +48,25 @@ export default function ConvAiDOMComponent({
       setMessages({ message: "Disconnected", source: "ai" });
       if (!wasUser && text === "orientation") {
         setMessages({ message: "Disconnected", source: "me" });
-      } else if (wasUser) {
-        alert("Something went wrong please try again");
+      } else if (wasUser && text === "orientation") {
+        setMessages({ message: "Disconnected", source: "alert" });
+        alert("Something went wrong please try again ");
       }
 
       userStoppedRef.current = false;
       conversationIdRef.current = "";
     },
     onMessage: (message) => {
-     if( message.message.includes(
-        "Alright, I’ve got your intel! Hang tight while I whip up your personalized workout plan. Catch you soon, champ! 💪"
-      )){
+      if (
+        message.message.includes(
+          "Alright, I’ve got your intel! Hang tight while I whip up your personalized workout plan. Catch you soon, champ! 💪"
+        )
+      ) {
+        setTimeout(() => {
+          conversation.endSession();
+        }, 10000);
+      }
 
-setTimeout(() => {
-    conversation.endSession();
-  }, 5000);       }
       setMessages({ message: message.message, source: message.source });
     },
     onError: (error) => {

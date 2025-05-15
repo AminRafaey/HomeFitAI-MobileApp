@@ -7,26 +7,20 @@ export const fetchWorkoutPlans = async (
   userId: string,
   getAgentData: ReturnType<typeof httpsCallable>
 ) => {
-  if (!userId) {
-    console.warn("userId not available.");
-    return { userData: null, userName: "" };
-  }
-
+  let success = false;
   let userData = null;
   let userName = "";
 
-  for (let attempt = 0; attempt < 5; attempt++) {
+  while (!success) {
     try {
       const workoutPlanRef = collection(DB, "users", userId, "workoutPlans");
       const snapshot = await getDocs(workoutPlanRef);
 
-      const workoutDocs = snapshot.docs.map((doc) => doc.data());
-      if (!workoutDocs.length) throw new Error("No workout plan found");
-
-      userName = workoutDocs[0]?.name || "";
+      const workoutNames = snapshot.docs.map((doc) => doc.data());
+      userName = workoutNames[0]?.name || "";
 
       const response = await getAgentData({
-        conversationId: workoutDocs[0]?.conversationId,
+        conversationId: workoutNames[0]?.conversationId,
         userId,
       });
 
@@ -38,13 +32,15 @@ export const fetchWorkoutPlans = async (
           conversation: data?.transcript,
           history: data?.workoutHistory,
         };
-        return { userData, userName };
+        success = true;
+      } else {
+        await new Promise((res) => setTimeout(res, 3000));
       }
     } catch (error) {
-      console.error(`Attempt ${attempt + 1} failed:`, error);
+      console.error("Error fetching workout plan:", error);
       await new Promise((res) => setTimeout(res, 3000));
     }
   }
 
-  return { userData: null, userName: "" };
+  return { userData, userName };
 };

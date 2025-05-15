@@ -20,6 +20,7 @@ import useAuth from "@/context/useAuth";
 import { httpsCallable } from "@firebase/functions";
 import { fetchWorkoutPlans } from "@/utils/static/helpers/fetchWorkoutPlans";
 import { useLocalSearchParams } from "expo-router";
+import { useNavigationState } from "@react-navigation/native";
 export default function Coaching() {
   const { user, initializing } = useAuth();
   const userID = user?.uid;
@@ -33,9 +34,13 @@ export default function Coaching() {
   const getAgentData = httpsCallable(cloudFunctions, "getAgentData");
   const [userData, setUserData] = useState<any>(null);
   const [userName, setUserName] = useState<string>("");
+  const isCurrentScreen = useNavigationState((state) => {
+    const currentRoute = state.routes[state.index];
+    return currentRoute.name === "coaching";
+  });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isCurrentScreen) return;
     const fetchPlans = async () => {
       const { userData, userName } = await fetchWorkoutPlans(
         userID,
@@ -47,7 +52,7 @@ export default function Coaching() {
     };
 
     fetchPlans();
-  }, [user]);
+  }, [user, isCurrentScreen]);
 
   const handleConversationIdReady = (id: string) => {
     conversationIdRef.current = id;
@@ -75,19 +80,22 @@ export default function Coaching() {
     messagesRef.current = [...messagesRef.current, newMessages];
     setMessages([...messagesRef.current]);
   };
-
   if (initializing) {
     return (
-      <SafeAreaView
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
+      <ImageBackground
+        source={require("../assets/images/Splash.jpg")}
+        style={styles.loadingBackground}
+        resizeMode="cover"
       >
-        <ActivityIndicator size="large" color="#FF377F" />
-      </SafeAreaView>
+        <ActivityIndicator
+          size="large"
+          color="#fff"
+          style={styles.loadingIndicator}
+        />
+      </ImageBackground>
     );
   }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -138,6 +146,19 @@ export default function Coaching() {
 }
 
 const styles = StyleSheet.create({
+  loadingBackground: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+  },
+  loadingIndicator: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+  },
   container: {
     flex: 1,
   },
