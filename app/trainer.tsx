@@ -26,9 +26,8 @@ export default function App() {
   const { initializing } = useAuth();
   const [currentIndexUser, setCurrentIndexUser] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-
+  const { initializing } = useAuth();
   const { users, loading, error } = useFetchUsers();
-
   const currentTrainerUser = users[currentIndexUser];
 
   useEffect(() => {
@@ -72,7 +71,7 @@ export default function App() {
       >
         <ActivityIndicator
           size="large"
-          color="#fff"
+          color="black"
           style={styles.loadingIndicator}
         />
       </ImageBackground>
