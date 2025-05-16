@@ -26,8 +26,7 @@ export default function App() {
   const { initializing } = useAuth();
   const [currentIndexUser, setCurrentIndexUser] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-
-  const { users, loading, error } = useFetchUsers();
+  const { users, loading } = useFetchUsers();
 
   const currentTrainerUser = users[currentIndexUser];
 
@@ -91,16 +90,6 @@ export default function App() {
           style={styles.loadingIndicator}
         />
       </ImageBackground>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.errorText}>
-          Something went wrong! Please try again later.
-        </Text>
-      </SafeAreaView>
     );
   }
 
