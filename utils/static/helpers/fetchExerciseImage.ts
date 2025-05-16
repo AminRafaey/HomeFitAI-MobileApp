@@ -3,6 +3,7 @@ import axios from "axios";
 
 const RAPIDAPI_HEADERS = {
   "x-rapidapi-key": "7319fe3066msh3ad6b025629ae02p104510jsn19100cc32820",
+
   "x-rapidapi-host": "exercisedb.p.rapidapi.com",
 };
 

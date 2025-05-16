@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import fallbackImage from "../../../assets/images/warmup.gif";
-import { useEffect, useState } from "react";
-import { fetchExerciseImage } from "@/utils/static/helpers/fetchExerciseImage";
+import { httpsCallable } from "@firebase/functions";
+import { cloudFunctions } from "@/firebaseConfig";
 
+const getExerciseImage = httpsCallable(cloudFunctions, "getExerciseImage");
 export default function ExerciseItem({
   id,
   index,
@@ -14,8 +16,13 @@ export default function ExerciseItem({
   const [imageUrl, setImageUrl] = useState(null);
   useEffect(() => {
     const loadImage = async () => {
-      const url = await fetchExerciseImage(id, name, image);
-      setImageUrl(url);
+      const url = await getExerciseImage({ id, name, image });
+      if (url?.data?.success) {
+        const gifUrl = url?.data?.data;
+        setImageUrl(gifUrl);
+      } else {
+        console.error("Error:", url?.data?.error);
+      }
     };
 
     loadImage();

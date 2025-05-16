@@ -53,11 +53,22 @@ export const getTodayWorkoutDetails = async (user, exerciseDetailsRef) => {
   });
 
   if (!latestPlan) {
-    console.log("Latest plan is not for today");
+    console.log("No workout plans found");
     return null;
   }
 
-  const planDocRef = doc(DB, "users", userId, "workoutPlans", todayName);
+  if (latestPlan.dayName !== todayName) {
+    console.log("No workout plan for today");
+    return null;
+  }
+
+  const planDocRef = doc(
+    DB,
+    "users",
+    userId,
+    "workoutPlans",
+    latestPlan.dayName
+  );
   const planDocSnap = await getDoc(planDocRef);
   const latestPlanData = planDocSnap.data();
 
@@ -71,9 +82,9 @@ export const getTodayWorkoutDetails = async (user, exerciseDetailsRef) => {
   const equipment = latestPlanData?.equipment || [];
 
   const exerciseData = {
-    name: `${todayName}'s Workout`,
-    date: today.toDateString(),
-    dayName: todayName,
+    name: `${latestPlan.dayName}'s Workout`,
+    date: latestPlan.createdAt.toDateString(),
+    dayName: latestPlan.dayName,
     warmup: [],
     main: [],
     cooldown: [],
@@ -110,8 +121,31 @@ export const getTodayWorkoutDetails = async (user, exerciseDetailsRef) => {
     });
   });
 
+  const exercisesArray = [];
   exercisesSnap.forEach((docSnap) => {
     const data = docSnap.data();
+    if (data.createdAt) {
+      exercisesArray.push({
+        id: docSnap.id,
+        ...data,
+        createdAt:
+          data.createdAt instanceof Timestamp
+            ? data.createdAt.toDate()
+            : new Date(data.createdAt),
+      });
+    }
+  });
+
+  const latestExerciseDate = exercisesArray.reduce((latest, exercise) => {
+    return exercise.createdAt > latest ? exercise.createdAt : latest;
+  }, new Date(0));
+
+  const latestExercises = exercisesArray.filter(
+    (exercise) =>
+      exercise.createdAt.toDateString() === latestExerciseDate.toDateString()
+  );
+
+  latestExercises.forEach((data) => {
     const sets = data.sets || 3;
     const reps = data.reps || "8-10";
 
@@ -147,7 +181,7 @@ export const getTodayWorkoutDetails = async (user, exerciseDetailsRef) => {
       .padStart(2, "0")}`;
 
     exerciseData.main.push({
-      id: docSnap.id,
+      id: data.id,
       name: data.name || "Unnamed",
       duration,
       sets,

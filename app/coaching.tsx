@@ -16,12 +16,11 @@ import SideMenu from "@/components/ui/SideMenu";
 import ConvAiDOMComponent from "@/components/AI/ConvAiDOMComponent";
 import { BlurView } from "expo-blur";
 import { cloudFunctions } from "@/firebaseConfig";
+import useAuth from "@/context/useAuth";
 import { httpsCallable } from "@firebase/functions";
 import { fetchWorkoutPlans } from "@/utils/static/helpers/fetchWorkoutPlans";
 import { useLocalSearchParams } from "expo-router";
 import { useNavigationState } from "@react-navigation/native";
-import useAuth from "@/context/useAuth";
-
 export default function Coaching() {
   const { user, initializing } = useAuth();
   const userID = user?.uid;

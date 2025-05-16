@@ -74,12 +74,12 @@ export default function ConvAiDOMComponent({
     },
   });
 
-  const changeWorkoutPlan = async ({ goal, days, intensity }) => {
+  const changeWorkoutPlan = async ({ goal, days, intensity, time }) => {
     try {
       await getUpdatedWorkoutPlan({
         conversationId: conversationIdRef.current,
-        userId: userId.uid,
-        userData: { goal, days, intensity },
+        userId: userId?.uid,
+        userData: { goal, days, intensity, time },
       });
 
       await new Promise((resolve) => setTimeout(resolve, 5000));

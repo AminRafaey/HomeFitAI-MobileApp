@@ -31,9 +31,9 @@ export const AuthProvider = ({ children }) => {
           ...userData,
         };
         setUser(userObject);
-        if (!userData?.orientation && router.asPath !== "/trainer") {
+        if (!userData?.orientation) {
           router.replace("/trainer");
-        } else if (userData?.orientation && router.asPath !== "/coaching") {
+        } else {
           router.replace("/coaching");
         }
       } else {

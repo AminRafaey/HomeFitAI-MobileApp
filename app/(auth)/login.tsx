@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+
   const handleLogin = () => {
     if (!email || !password) {
       Alert.alert("Error", "Please enter both email and password.");
